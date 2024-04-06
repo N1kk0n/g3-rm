@@ -1,0 +1,10 @@
+.idea/
+.vscode/
+target/
+resource-agent.iml
+
+*.log
+*.log.*
+*.http
+*.sh
+*.db
