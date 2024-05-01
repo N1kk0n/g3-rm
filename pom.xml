@@ -8,11 +8,11 @@
 		<version>3.2.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>g3.ra</groupId>
-	<artifactId>resource-agent</artifactId>
+	<groupId>g3.rm</groupId>
+	<artifactId>resource-manager</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>resource-agent</name>
-	<description>Resource agent in G3</description>
+	<name>resource-manager</name>
+	<description>Resource manager in G3</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
