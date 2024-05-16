@@ -1,11 +1,11 @@
 package g3.rm.resourcemanager.processes;
 
-import g3.rm.resourcemanager.data.TaskObject;
-import g3.rm.resourcemanager.jpa_domain.LogicalDeviceParam;
+import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.entities.DeviceParam;
 import g3.rm.resourcemanager.repositories.DeviceParamRepository;
-import g3.rm.resourcemanager.services.HttpResponseService;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
-import g3.rm.resourcemanager.services.TimerService;
+import g3.rm.resourcemanager.services.SessionEventResponseService;
+import g3.rm.resourcemanager.services.TimerCreatorService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +22,9 @@ public class CheckDevice {
     @Autowired
     private DeviceParamRepository deviceParamRepository;
     @Autowired
-    private HttpResponseService responseService;
+    private SessionEventResponseService responseService;
     @Autowired
-    private TimerService timerService;
+    private TimerCreatorService timerCreatorService;
     @Autowired
     private RouterEventPublisher eventPublisher;
 
@@ -51,21 +51,19 @@ public class CheckDevice {
         long eventId = taskObject.getEventId();
         String deviceName = taskObject.getDeviceNameList().get(0);
 
-        Timer timer = timerService.createCheckDeviceTimer(deviceName);
+        Timer timer = timerCreatorService.createCheckDeviceTimer(deviceName);
 
-        LogicalDeviceParam logicalDeviceParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "CHECK_PATH");
-        if (logicalDeviceParam == null) {
+        DeviceParam deviceParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "CHECK_PATH");
+        if (deviceParam == null) {
             LOGGER.error("Unknown device name: " + deviceName + " with paramName: CHECK_PATH");
-            responseService.sendCheckDeviceResponse(eventId, deviceName, -1);
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent(ERROR, taskObject);
             return CompletableFuture.completedFuture(ERROR);
         }
-        String checkScriptPath = logicalDeviceParam.getParamValue();
+        String checkScriptPath = deviceParam.getParamValue();
         if(!new File(checkScriptPath).exists()) {
             LOGGER.error("File: " + checkScriptPath + " not found");
-            responseService.sendCheckDeviceResponse(eventId, deviceName, -1);
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent(ERROR, taskObject);
             return CompletableFuture.completedFuture(ERROR);
         }
@@ -87,18 +85,15 @@ public class CheckDevice {
             LOGGER.info("Operation: " + OPERATION + " (Device name: " + deviceName + "). Exit value: " + exitCode);
         } catch (IOException ex) {
             LOGGER.error("Process execution error. Operation: " + OPERATION + ". Start process: " + args + ". Message: " + ex.getMessage(), ex);
-            responseService.sendCheckDeviceResponse(eventId, deviceName, -1);
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent(ERROR, taskObject);
             return CompletableFuture.completedFuture(ERROR);
         } catch (InterruptedException ex) {
             LOGGER.error("Process was interrupted. Operation: " + OPERATION + ". Start process: " + args);
-            responseService.sendCheckDeviceResponse(eventId, deviceName, -1);
             eventPublisher.publishTaskEvent(ERROR, taskObject);
             return CompletableFuture.completedFuture(ERROR);
         }
-        responseService.sendCheckDeviceResponse(eventId, deviceName, exitCode);
-        timerService.cancelTimer(timer);
+        timerCreatorService.cancelTimer(timer);
         if (exitCode != 0) {
             eventPublisher.publishTaskEvent(ERROR, taskObject);
             return CompletableFuture.completedFuture(ERROR);

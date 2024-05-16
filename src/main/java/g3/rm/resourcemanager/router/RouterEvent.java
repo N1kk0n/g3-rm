@@ -1,7 +1,7 @@
 package g3.rm.resourcemanager.router;
 
 import org.springframework.context.ApplicationEvent;
-import g3.rm.resourcemanager.data.TaskObject;
+import g3.rm.resourcemanager.dtos.TaskObject;
 
 public class RouterEvent extends ApplicationEvent {
     private String message;

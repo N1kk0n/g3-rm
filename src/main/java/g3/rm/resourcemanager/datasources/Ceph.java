@@ -20,12 +20,12 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
-import g3.rm.resourcemanager.data.TaskObject;
-import g3.rm.resourcemanager.repositories.AgentParamRepository;
-import g3.rm.resourcemanager.repositories.TaskParamRepository;
+import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
+import g3.rm.resourcemanager.repositories.ProgramParamRepository;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
 import g3.rm.resourcemanager.services.FileSystemService;
-import g3.rm.resourcemanager.services.TimerService;
+import g3.rm.resourcemanager.services.TimerCreatorService;
 import g3.rm.resourcemanager.utils.ArchiveOperations;
 
 import java.io.File;
@@ -37,11 +37,11 @@ import java.util.concurrent.CompletableFuture;
 
 public class Ceph {
     @Autowired
-    private TimerService timerService;
+    private TimerCreatorService timerCreatorService;
     @Autowired
-    private AgentParamRepository agentParamRepository;
+    private ManagerParamRepository managerParamRepository;
     @Autowired
-    private TaskParamRepository taskParamRepository;
+    private ProgramParamRepository programParamRepository;
     @Autowired
     private FileSystemService fileSystemService;
     @Autowired
@@ -64,27 +64,27 @@ public class Ceph {
 
     @Async
     public CompletableFuture<String> download() {
-        Timer timer = timerService.createDownloadTimer(taskObject.getTaskId());
-        if (!taskParamRepository.existsByProgramId(taskObject.getProgramId())) {
+        Timer timer = timerCreatorService.createDownloadTimer(taskObject.getTaskId());
+        if (!programParamRepository.existsByProgramId(taskObject.getProgramId())) {
             LOGGER.error("Indication " + taskObject.getProgramId() + " not found");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
 
-        String homeDir = taskParamRepository.findByProgramIdAndParamName(taskObject.getProgramId(), "HOME").getParamValue();
+        String homeDir = programParamRepository.findByProgramIdAndParamName(taskObject.getProgramId(), "HOME").getParamValue();
         String taskDir = homeDir + File.separator + taskObject.getTaskId();
 
         if (!fileSystemService.taskFolderPrepared(taskObject.getTaskId(), taskObject.getProgramId(), taskObject.getDeviceNameList())) {
             LOGGER.error("Error while prepare task folder: " + taskDir);
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
 
-        String cephHost = agentParamRepository.getByName("CEPH_HOST").getValue();
-        String accessKey = agentParamRepository.getByName("CEPH_ACCESS_KEY").getValue();
-        String secretKey = agentParamRepository.getByName("CEPH_SECRET_KEY").getValue();
+        String cephHost = managerParamRepository.getByParamName("CEPH_HOST").getParamValue();
+        String accessKey = managerParamRepository.getByParamName("CEPH_ACCESS_KEY").getParamValue();
+        String secretKey = managerParamRepository.getByParamName("CEPH_SECRET_KEY").getParamValue();
 
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         ClientConfiguration clientConf = new ClientConfiguration();
@@ -96,19 +96,19 @@ public class Ceph {
                 .build();
         if (conn == null) {
             LOGGER.error("Connection to: " + cephHost + " failed");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
         if (!conn.doesBucketExistV2(taskObject.getBucketName())) {
             LOGGER.error("Bucket with name '" + taskObject.getBucketName() + "' is not exist");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
         if (!conn.doesObjectExist(taskObject.getBucketName(), taskObject.getObjectName())) {
             LOGGER.error("Object: " + taskObject.getObjectName() + " not exist");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
@@ -128,7 +128,7 @@ public class Ceph {
             int unzipResult = operation.unzip(archivePath, dataFile.getParent());
             if (unzipResult == -1) {
                 LOGGER.error("Error while unzip " + archivePath + " after download.");
-                timerService.cancelTimer(timer);
+                timerCreatorService.cancelTimer(timer);
                 eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
                 return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
             }
@@ -141,22 +141,22 @@ public class Ceph {
                 transferManager.shutdownNow();
             }
         }
-        timerService.cancelTimer(timer);
+        timerCreatorService.cancelTimer(timer);
         eventPublisher.publishTaskEvent("DOWNLOAD_DONE", taskObject);
         return CompletableFuture.completedFuture("DOWNLOAD_DONE");
     }
 
     @Async
     public CompletableFuture<String> upload() {
-        Timer timer = timerService.createUploadTimer(taskObject.getTaskId());
-        if (!taskParamRepository.existsByProgramId(taskObject.getProgramId())) {
+        Timer timer = timerCreatorService.createUploadTimer(taskObject.getTaskId());
+        if (!programParamRepository.existsByProgramId(taskObject.getProgramId())) {
             LOGGER.error("Indication " + taskObject.getProgramId() + " not found");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
 
-        String homeDir = taskParamRepository.findByProgramIdAndParamName(taskObject.getProgramId(), "HOME").getParamValue();
+        String homeDir = programParamRepository.findByProgramIdAndParamName(taskObject.getProgramId(), "HOME").getParamValue();
         String taskDir = homeDir + File.separator + taskObject.getTaskId();
         String archivePath = taskDir + File.separator + taskObject.getTaskId() + ".zip";
         
@@ -172,20 +172,20 @@ public class Ceph {
         int zipResult = operation.zip(zipFile.getParent() , archivePath);
         if (zipResult == -1) {
             LOGGER.error("Error while zip " + archivePath + " before upload.");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
         if (!zipFile.exists()) {
             LOGGER.error("File " + archivePath + " not found");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
 
-        String cephHost = agentParamRepository.getByName("CEPH_HOST").getValue();
-        String accessKey = agentParamRepository.getByName("CEPH_ACCESS_KEY").getValue();
-        String secretKey = agentParamRepository.getByName("CEPH_SECRET_KEY").getValue();
+        String cephHost = managerParamRepository.getByParamName("CEPH_HOST").getParamValue();
+        String accessKey = managerParamRepository.getByParamName("CEPH_ACCESS_KEY").getParamValue();
+        String secretKey = managerParamRepository.getByParamName("CEPH_SECRET_KEY").getParamValue();
 
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
         ClientConfiguration clientConf = new ClientConfiguration();
@@ -197,13 +197,13 @@ public class Ceph {
                 .withEndpointConfiguration(endpointConf).build();
         if (conn == null) {
             LOGGER.error("Connection to: " + cephHost + " failed");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
         if (!conn.doesBucketExistV2(taskObject.getBucketName())) {
             LOGGER.error("Bucket with name '" + taskObject.getBucketName() + "' is not exist");
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
@@ -219,7 +219,7 @@ public class Ceph {
             upload.waitForCompletion();
         } catch (IOException ex) {
             LOGGER.error("Error while upload. Data: " + archivePath + ". Error message: " + ex.getMessage(), ex);
-            timerService.cancelTimer(timer);
+            timerCreatorService.cancelTimer(timer);
             eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         } catch (InterruptedException ex) {
@@ -231,7 +231,7 @@ public class Ceph {
                 transferManager.shutdownNow();
             }
         }
-        timerService.cancelTimer(timer);
+        timerCreatorService.cancelTimer(timer);
         eventPublisher.publishTaskEvent("UPLOAD_DONE", taskObject);
         return CompletableFuture.completedFuture("UPLOAD_DONE");
     }
@@ -241,7 +241,7 @@ public class Ceph {
     }
 
     private boolean debugMode() {
-        String debugMode = agentParamRepository.getByName("AGENT_DEBUG_MODE").getValue();
+        String debugMode = managerParamRepository.getByParamName("AGENT_DEBUG_MODE").getParamValue();
         debugMode = debugMode.toLowerCase();
         if (debugMode.equals("1") || debugMode.equals("true")) {
             return true;

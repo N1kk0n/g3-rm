@@ -1,13 +1,12 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.jpa_domain.LogicalDeviceParam;
+import g3.rm.resourcemanager.entities.DeviceParam;
 import g3.rm.resourcemanager.processes.*;
 import g3.rm.resourcemanager.repositories.DeviceParamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
-import g3.rm.resourcemanager.data.TaskObject;
-import g3.rm.processes.*;
+import g3.rm.resourcemanager.dtos.TaskObject;
 
 @Service
 public class ProcessCreatorService {
@@ -24,9 +23,9 @@ public class ProcessCreatorService {
         switch (operation) {
             case "CHECKDEVICE": {
                 String deviceName = taskObject.getDeviceNameList().get(0);
-                LogicalDeviceParam logicalDeviceParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "CHECK_PATH");
-                if (logicalDeviceParam != null) {
-                    taskObject.setTaskId(logicalDeviceParam.getDeviceId());
+                DeviceParam deviceParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "CHECK_PATH");
+                if (deviceParam != null) {
+                    taskObject.setTaskId(deviceParam.getDeviceId());
                 }
 
                 CheckDevice contextBean = context.getBean(CheckDevice.class);

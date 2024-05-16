@@ -4,7 +4,6 @@ import g3.rm.resourcemanager.processes.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
-import g3.rm.processes.*;
 
 @Configuration
 public class ProcessesConfig {

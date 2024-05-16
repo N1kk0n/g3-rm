@@ -1,8 +1,8 @@
 package g3.rm.resourcemanager.repositories;
 
-import g3.rm.resourcemanager.jdbc_domain.AgentParam;
-import g3.rm.resourcemanager.jdbc_domain.LogicalDeviceParam;
-import g3.rm.resourcemanager.jdbc_domain.TaskParam;
+import g3.rm.resourcemanager.dtos.ManagerParam;
+import g3.rm.resourcemanager.dtos.DeviceParam;
+import g3.rm.resourcemanager.dtos.ProgramParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -20,52 +20,59 @@ public class InitialParamRepository {
         this.template = template;
     }
 
-    public List<AgentParam> getAgentParams(String agentName) {
-        String sql = "select AGENT_ID, PARAM_NAME, PARAM_VALUE " +
-                "from AGENT_PARAM ap left join AGENT a on ap.AGENT_ID = a.ID " +
-                "where a.CAPTION = :caption";
+    public List<ManagerParam> getManagerParams(String managerName) {
+        String sql = """
+                select rm.manager_id, param_name, param_value
+                from resource_manager_param rmp left join resource_manager rm on rmp.manager_id = rm.manager_id
+                where rm.manager_name = :name
+                """;
         SqlParameterSource sqlParameterSource = new MapSqlParameterSource()
-                .addValue("caption", agentName);
+                .addValue("name", managerName);
 
         return template.query(sql, sqlParameterSource, (resultSet, rowNum) -> {
-            AgentParam agentParam = new AgentParam();
-            agentParam.setAgentId(resultSet.getLong("AGENT_ID"));
-            agentParam.setParamName(resultSet.getString("PARAM_NAME"));
-            agentParam.setParamValue(resultSet.getString("PARAM_VALUE"));
-            return agentParam;
+            ManagerParam managerParam = new ManagerParam();
+            managerParam.setManagerId(resultSet.getInt("MANAGER_ID"));
+            managerParam.setParamName(resultSet.getString("PARAM_NAME"));
+            managerParam.setParamValue(resultSet.getString("PARAM_VALUE"));
+            return managerParam;
         });
     }
 
-    public List<LogicalDeviceParam> getLogicalDeviceParams(String agentName) {
-        String sql = "select DEVICE_ID, DEVICE_NAME, PARAM_NAME, PARAM_VALUE " +
-                "from AGENT_LOGICAL_DEVICE_PARAM aldp left join AGENT a on aldp.AGENT_ID = a.ID " +
-                "where a.CAPTION = :caption";
+    public List<DeviceParam> getDeviceParams(String managerName) {
+        String sql = """
+                select d.device_id, device_name,  param_name, param_value
+                from resource_manager_device_param rmdp left join resource_manager rm on rmdp.manager_id = rm.manager_id
+                                                        left join device d on rmdp.device_id = d.device_id
+                where rm.manager_name = :name
+                """;
         SqlParameterSource sqlParameterSource = new MapSqlParameterSource()
-                .addValue("caption", agentName);
+                .addValue("name", managerName);
 
         return template.query(sql, sqlParameterSource, (resultSet, rowNum) -> {
-            LogicalDeviceParam logicalDeviceParam = new LogicalDeviceParam();
-            logicalDeviceParam.setDeviceId(resultSet.getInt("DEVICE_ID"));
-            logicalDeviceParam.setDeviceName(resultSet.getString("DEVICE_NAME"));
-            logicalDeviceParam.setParamName(resultSet.getString("PARAM_NAME"));
-            logicalDeviceParam.setParamValue(resultSet.getString("PARAM_VALUE"));
-            return logicalDeviceParam;
+            DeviceParam deviceParam = new DeviceParam();
+            deviceParam.setDeviceId(resultSet.getInt("DEVICE_ID"));
+            deviceParam.setDeviceName(resultSet.getString("DEVICE_NAME"));
+            deviceParam.setParamName(resultSet.getString("PARAM_NAME"));
+            deviceParam.setParamValue(resultSet.getString("PARAM_VALUE"));
+            return deviceParam;
         });
     }
 
-    public List<TaskParam> getTaskParams(String agentName) {
-        String sql = "select PROGRAM_ID, PARAM_NAME, PARAM_VALUE " +
-                "from AGENT_TASK_PARAM atp left join AGENT a on atp.AGENT_ID = a.ID " +
-                "where a.CAPTION = :caption";
+    public List<ProgramParam> getProgramParams(String managerName) {
+        String sql = """
+                select program_id, param_name, param_value
+                from resource_manager_program_param rmpp left join resource_manager rm on rm.manager_id = rmpp.manager_id
+                where rm.manager_name = :name
+                """;
         SqlParameterSource sqlParameterSource = new MapSqlParameterSource()
-                .addValue("caption", agentName);
+                .addValue("name", managerName);
 
         return template.query(sql, sqlParameterSource, (resultSet, rowNum) -> {
-            TaskParam taskParam = new TaskParam();
-            taskParam.setProgramId(resultSet.getInt("PROGRAM_ID"));
-            taskParam.setParamName(resultSet.getString("PARAM_NAME"));
-            taskParam.setParamValue(resultSet.getString("PARAM_VALUE"));
-            return taskParam;
+            ProgramParam programParam = new ProgramParam();
+            programParam.setProgramId(resultSet.getInt("PROGRAM_ID"));
+            programParam.setParamName(resultSet.getString("PARAM_NAME"));
+            programParam.setParamValue(resultSet.getString("PARAM_VALUE"));
+            return programParam;
         });
     }
 }

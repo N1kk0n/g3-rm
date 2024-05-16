@@ -4,10 +4,15 @@ import g3.rm.resourcemanager.timers.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
-import g3.rm.timers.*;
 
 @Configuration
 public class TimersConfig {
+    @Bean
+    @Scope("prototype")
+    CheckDecisionTimer checkDecisionTimer() {
+        return new CheckDecisionTimer();
+    }
+
     @Bean
     @Scope("prototype")
     CheckDeviceTimer checkDeviceTimer() {

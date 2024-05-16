@@ -1,7 +1,7 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.jpa_domain.AgentParam;
-import g3.rm.resourcemanager.repositories.AgentParamRepository;
+import g3.rm.resourcemanager.entities.ManagerParam;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import jakarta.json.Json;
 import jakarta.json.JsonObjectBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -21,17 +21,17 @@ import java.sql.*;
 @Service
 public class LoggerService {
     @Autowired
-    private AgentParamRepository agentParamRepository;
+    private ManagerParamRepository managerParamRepository;
 
     private final Logger LOGGER = LogManager.getLogger("LoggerService");
 
     public String getPage(long taskId, long sessionId, int pageNumber, int pageSize) {
-        AgentParam agentParam = agentParamRepository.getByName("TASK_LOG_DIR");
-        if (agentParam == null) {
+        ManagerParam managerParam = managerParamRepository.getByParamName("TASK_LOG_DIR");
+        if (managerParam == null) {
             LOGGER.error("Agent parameter TASK_LOG_DIR not found");
             return "Internal error. Check logs for details";
         }
-        String logPath = agentParam.getValue();
+        String logPath = managerParam.getParamValue();
         logPath = logPath + File.separator + taskId + File.separator + sessionId + File.separator + "run.log";
 
         File log = new File(logPath);
@@ -82,12 +82,12 @@ public class LoggerService {
             LOGGER.info("Saving log: " + taskId + ", " + operation);
         }
 
-        AgentParam agentParam = agentParamRepository.getByName("TASK_LOG_DIR");
-        if (agentParam == null) {
+        ManagerParam managerParam = managerParamRepository.getByParamName("TASK_LOG_DIR");
+        if (managerParam == null) {
             LOGGER.error("Agent parameter TASK_LOG_DIR not found");
             return;
         }
-        String logPath = agentParam.getValue();
+        String logPath = managerParam.getParamValue();
 
         switch (operation) {
             case "CHECK":
@@ -312,9 +312,9 @@ public class LoggerService {
         DataSourceBuilder<?> builder = DataSourceBuilder.create();
         builder.type(PGSimpleDataSource.class);
         builder.driverClassName("org.postgresql.Driver");
-        builder.url(agentParamRepository.getByName("DB_URL").getValue());
-        builder.username(agentParamRepository.getByName("DB_USER").getValue());
-        builder.password(agentParamRepository.getByName("DB_PASSWORD").getValue());
+        builder.url(managerParamRepository.getByParamName("DB_URL").getParamValue());
+        builder.username(managerParamRepository.getByParamName("DB_USER").getParamValue());
+        builder.password(managerParamRepository.getByParamName("DB_PASSWORD").getParamValue());
         return builder.build();
     }
 
@@ -322,19 +322,19 @@ public class LoggerService {
         DataSourceBuilder<?> builder = DataSourceBuilder.create();
         builder.type(PGSimpleDataSource.class);
         builder.driverClassName("org.postgresql.Driver");
-        builder.url(agentParamRepository.getByName("DB_URL").getValue());
-        builder.username(agentParamRepository.getByName("DB_LOG_USER").getValue());
-        builder.password(agentParamRepository.getByName("DB_LOG_PASSWORD").getValue());
+        builder.url(managerParamRepository.getByParamName("DB_URL").getParamValue());
+        builder.username(managerParamRepository.getByParamName("DB_LOG_USER").getParamValue());
+        builder.password(managerParamRepository.getByParamName("DB_LOG_PASSWORD").getParamValue());
         return builder.build();
     }
 
     private boolean debugMode() {
-        AgentParam debugModeParam = agentParamRepository.getByName("AGENT_DEBUG_MODE");
+        ManagerParam debugModeParam = managerParamRepository.getByParamName("AGENT_DEBUG_MODE");
         if (debugModeParam == null) {
             LOGGER.error("Agent parameter with name: AGENT_DEBUG_MODE not found");
             return false;
         }
-        String debugMode = debugModeParam.getValue();
+        String debugMode = debugModeParam.getParamValue();
         debugMode = debugMode.toLowerCase();
         if (debugMode.equals("1") || debugMode.equals("true")) {
             return true;

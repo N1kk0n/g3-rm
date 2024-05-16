@@ -1,16 +1,16 @@
 package g3.rm.resourcemanager.processes;
 
-import g3.rm.resourcemanager.jpa_domain.TaskParam;
-import g3.rm.resourcemanager.repositories.AgentParamRepository;
-import g3.rm.resourcemanager.repositories.TaskParamRepository;
-import g3.rm.resourcemanager.services.HttpResponseService;
+import g3.rm.resourcemanager.entities.ProgramParam;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
+import g3.rm.resourcemanager.repositories.ProgramParamRepository;
+import g3.rm.resourcemanager.services.SessionEventResponseService;
 import jakarta.json.Json;
 import jakarta.json.JsonObjectBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
-import g3.rm.resourcemanager.data.TaskObject;
+import g3.rm.resourcemanager.dtos.TaskObject;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
 import g3.rm.resourcemanager.services.FileSystemService;
 
@@ -24,13 +24,13 @@ import java.util.concurrent.CompletableFuture;
 
 public class FinalProgressInfo {
     @Autowired
-    private AgentParamRepository agentParamRepository;
+    private ManagerParamRepository managerParamRepository;
     @Autowired
-    private TaskParamRepository taskParamRepository;
+    private ProgramParamRepository programParamRepository;
     @Autowired
     private FileSystemService fileSystemService;
     @Autowired
-    private HttpResponseService responseService;
+    private SessionEventResponseService responseService;
     @Autowired
     private RouterEventPublisher eventPublisher;
 
@@ -54,16 +54,16 @@ public class FinalProgressInfo {
 
     @Async
     public CompletableFuture<String> start() {
-        TaskParam taskParam = taskParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "PROGRESSINFO");
-        if (taskParam == null) {
+        ProgramParam programParam = programParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "PROGRESSINFO");
+        if (programParam == null) {
             LOGGER.error("Unknown programId: " + this.taskObject.getProgramId());
             eventPublisher.publishTaskEvent(ERROR, taskObject);
             return CompletableFuture.completedFuture(ERROR);
         }
-        String path = taskParam.getParamValue();
+        String path = programParam.getParamValue();
         if (fileSystemService.templateMarkerExists(this.taskObject.getProgramId())) {
-            String programHome = taskParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME").getParamValue();
-            String scriptName = agentParamRepository.getByName("PROGRESS_INFO_NAME").getValue();
+            String programHome = programParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME").getParamValue();
+            String scriptName = managerParamRepository.getByParamName("PROGRESS_INFO_NAME").getParamValue();
             path = programHome + File.separator + this.taskObject.getTaskId() + "_scripts" + File.separator + scriptName;
         }
         if (!new File(path).exists()) {
@@ -112,7 +112,7 @@ public class FinalProgressInfo {
             String progressInfo = jsonObjectBuilder.build().toString();
 
             LOGGER.info("Operation: " + OPERATION + " (Task ID: " + taskObject.getTaskId() + "). Exit value: " + exitCode);
-            responseService.sendFinalProgressInfoResponse(progressInfo);
+            responseService.setProgressInfo(progressInfo);
         } catch (IOException ex) {
             LOGGER.error("Process execution error. Operation: " + OPERATION + ". Start process: " + args + ". Message: " + ex.getMessage(), ex);
             eventPublisher.publishTaskEvent(ERROR, taskObject);

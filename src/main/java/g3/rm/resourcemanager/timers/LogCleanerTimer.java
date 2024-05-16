@@ -1,7 +1,7 @@
 package g3.rm.resourcemanager.timers;
 
-import g3.rm.resourcemanager.jpa_domain.AgentParam;
-import g3.rm.resourcemanager.repositories.AgentParamRepository;
+import g3.rm.resourcemanager.entities.ManagerParam;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.services.LogCleanerService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +14,7 @@ import java.util.TimerTask;
 
 public class LogCleanerTimer extends TimerTask {
     @Autowired
-    private AgentParamRepository agentParamRepository;
+    private ManagerParamRepository managerParamRepository;
     @Autowired
     private LogCleanerService logCleanerService;
 
@@ -22,12 +22,12 @@ public class LogCleanerTimer extends TimerTask {
 
     @Override
     public void run() {
-        AgentParam maxAgeParam = agentParamRepository.getByName("LOG_MAX_AGE");
+        ManagerParam maxAgeParam = managerParamRepository.getByParamName("LOG_MAX_AGE");
         if (maxAgeParam == null) {
             LOGGER.error("Agent parameter LOG_MAX_AGE not found");
             return;
         }
-        int maxAge = Integer.parseInt(maxAgeParam.getValue());
+        int maxAge = Integer.parseInt(maxAgeParam.getParamValue());
         int daysMinus = maxAge * -1;
 
         Date now = new Date();

@@ -1,27 +1,12 @@
-package g3.rm.resourcemanager.jpa_domain;
+package g3.rm.resourcemanager.dtos;
 
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
-@Entity
-public class LogicalDeviceParam {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+public class DeviceParam {
     private Integer deviceId;
     private String deviceName;
     private String paramName;
     private String paramValue;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+    public DeviceParam() {
     }
 
     public Integer getDeviceId() {
@@ -36,8 +21,8 @@ public class LogicalDeviceParam {
         return deviceName;
     }
 
-    public void setDeviceName(String lvuName) {
-        this.deviceName = lvuName;
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
     }
 
     public String getParamName() {
@@ -54,5 +39,15 @@ public class LogicalDeviceParam {
 
     public void setParamValue(String paramValue) {
         this.paramValue = paramValue;
+    }
+
+    @Override
+    public String toString() {
+        return "LogicalDeviceParam{" +
+                "deviceId=" + deviceId +
+                ", deviceName='" + deviceName + '\'' +
+                ", paramName='" + paramName + '\'' +
+                ", paramValue='" + paramValue + '\'' +
+                '}';
     }
 }

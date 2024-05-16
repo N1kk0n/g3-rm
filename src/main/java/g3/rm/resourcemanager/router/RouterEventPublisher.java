@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-import g3.rm.resourcemanager.data.TaskObject;
+import g3.rm.resourcemanager.dtos.TaskObject;
 
 @Component
 public class RouterEventPublisher {

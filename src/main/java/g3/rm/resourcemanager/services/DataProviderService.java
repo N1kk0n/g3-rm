@@ -1,10 +1,10 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.data.TaskObject;
+import g3.rm.resourcemanager.dtos.TaskObject;
 import g3.rm.resourcemanager.datasources.Ceph;
 import g3.rm.resourcemanager.datasources.OracleDB;
-import g3.rm.resourcemanager.jpa_domain.AgentParam;
-import g3.rm.resourcemanager.repositories.AgentParamRepository;
+import g3.rm.resourcemanager.entities.ManagerParam;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +21,7 @@ public class DataProviderService {
     @Autowired
     private ApplicationContext context;
     @Autowired
-    private AgentParamRepository agentParamRepository;
+    private ManagerParamRepository managerParamRepository;
     @Autowired
     private ProcessContainerService processContainerService;
     @Autowired
@@ -33,13 +33,13 @@ public class DataProviderService {
     }
 
     public void download(TaskObject taskObject) {
-        AgentParam dataSourceParam = agentParamRepository.getByName("DATA_SOURCE");
+        ManagerParam dataSourceParam = managerParamRepository.getByParamName("DATA_SOURCE");
         if (dataSourceParam == null) {
             LOGGER.error("Agent parameter DATA_SOURCE not found");
             eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
             return;
         }
-        String dataSource = dataSourceParam.getValue();
+        String dataSource = dataSourceParam.getParamValue();
         switch (dataSource) {
             case "ceph": {
                 Ceph contextBean = context.getBean(Ceph.class);
@@ -61,13 +61,13 @@ public class DataProviderService {
     }
 
     public void upload(TaskObject taskObject) {
-        AgentParam dataSourceParam = agentParamRepository.getByName("DATA_SOURCE");
+        ManagerParam dataSourceParam = managerParamRepository.getByParamName("DATA_SOURCE");
         if (dataSourceParam == null) {
             LOGGER.error("Agent parameter DATA_SOURCE not found");
             eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
             return;
         }
-        String dataSourceType = dataSourceParam.getValue();
+        String dataSourceType = dataSourceParam.getParamValue();
         switch (dataSourceType) {
             case "ceph": {
                 Ceph contextBean = context.getBean(Ceph.class);
@@ -92,9 +92,9 @@ public class DataProviderService {
         DataSourceBuilder<?> builder = DataSourceBuilder.create();
         builder.type(PGSimpleDataSource.class);
         builder.driverClassName("org.postgresql.Driver");
-        builder.url(agentParamRepository.getByName("DB_URL").getValue());
-        builder.username(agentParamRepository.getByName("DB_USER").getValue());
-        builder.password(agentParamRepository.getByName("DB_PASSWORD").getValue());
+        builder.url(managerParamRepository.getByParamName("DB_URL").getParamValue());
+        builder.username(managerParamRepository.getByParamName("DB_USER").getParamValue());
+        builder.password(managerParamRepository.getByParamName("DB_PASSWORD").getParamValue());
         return builder.build();
     }
 }

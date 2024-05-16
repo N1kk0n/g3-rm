@@ -1,7 +1,7 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.jpa_domain.AgentParam;
-import g3.rm.resourcemanager.repositories.AgentParamRepository;
+import g3.rm.resourcemanager.entities.ManagerParam;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,26 +18,26 @@ import java.time.Instant;
 @Service
 public class LogCleanerService {
     @Autowired
-    private AgentParamRepository agentParamRepository;
+    private ManagerParamRepository managerParamRepository;
     @Autowired
-    private TimerService timerService;
+    private TimerCreatorService timerCreatorService;
 
     private final Logger LOGGER = LogManager.getLogger("LogCleanerService");
 
     public void cleanOldTaskLogs() {
-        AgentParam maxAgeParam = agentParamRepository.getByName("LOG_MAX_AGE");
+        ManagerParam maxAgeParam = managerParamRepository.getByParamName("LOG_MAX_AGE");
         if (maxAgeParam == null) {
             LOGGER.error("Agent parameter LOG_MAX_AGE not found");
             return;
         }
-        int maxAge = Integer.parseInt(maxAgeParam.getValue());
+        int maxAge = Integer.parseInt(maxAgeParam.getParamValue());
 
-        AgentParam logPathParam = agentParamRepository.getByName("TASK_LOG_DIR");
+        ManagerParam logPathParam = managerParamRepository.getByParamName("TASK_LOG_DIR");
         if (logPathParam == null) {
             LOGGER.error("Agent parameter TASK_LOG_DIR not found");
             return;
         }
-        String logPath = logPathParam.getValue();
+        String logPath = logPathParam.getParamValue();
 
         File logDir = new File(logPath);
         if (!logDir.exists()) {
@@ -54,7 +54,7 @@ public class LogCleanerService {
             deleteLog(taskLogDir, maxAge, debugMode);
         }
 
-        timerService.createLogCleanerTimer();
+        timerCreatorService.createLogCleanerTimer();
     }
 
     private void deleteLog(File log, long maxAge, boolean debugMode) {
@@ -84,12 +84,12 @@ public class LogCleanerService {
     }
 
     private boolean debugMode() {
-        AgentParam debugModeParam = agentParamRepository.getByName("AGENT_DEBUG_MODE");
+        ManagerParam debugModeParam = managerParamRepository.getByParamName("AGENT_DEBUG_MODE");
         if (debugModeParam == null) {
             LOGGER.error("Agent parameter with name: AGENT_DEBUG_MODE not found");
             return false;
         }
-        String debugMode = debugModeParam.getValue();
+        String debugMode = debugModeParam.getParamValue();
         debugMode = debugMode.toLowerCase();
         if (debugMode.equals("1") || debugMode.equals("true")) {
             return true;

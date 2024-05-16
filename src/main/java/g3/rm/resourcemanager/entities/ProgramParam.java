@@ -1,23 +1,21 @@
-package g3.rm.resourcemanager.jpa_domain;
+package g3.rm.resourcemanager.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
-public class TaskParam {
+public class ProgramParam {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "program_param_gen")
+    @SequenceGenerator(name = "program_param_gen", sequenceName = "PROGRAM_PARAM_SEQ", allocationSize = 1)
     private Long id;
     private Integer programId;
     private String paramName;
     private String paramValue;
 
-    public TaskParam() {
+    public ProgramParam() {
     }
 
-    public TaskParam(Integer programId, String paramName, String paramValue) {
+    public ProgramParam(Integer programId, String paramName, String paramValue) {
         this.programId = programId;
         this.paramName = paramName;
         this.paramValue = paramValue;

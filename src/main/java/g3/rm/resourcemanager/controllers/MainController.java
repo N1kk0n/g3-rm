@@ -1,13 +1,12 @@
 package g3.rm.resourcemanager.controllers;
 
-import g3.rm.resourcemanager.jpa_domain.TaskProcess;
+import g3.rm.resourcemanager.entities.TaskProcess;
 import g3.rm.resourcemanager.repositories.TaskProcessRepository;
 import g3.rm.resourcemanager.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import g3.rm.resourcemanager.data.TaskObject;
-import g3.rm.services.*;
+import g3.rm.resourcemanager.dtos.TaskObject;
 
 @Controller
 public class MainController {
@@ -16,7 +15,7 @@ public class MainController {
     @Autowired
     private ProcessCreatorService processCreatorService;
     @Autowired
-    private TimerService timerService;
+    private TimerCreatorService timerCreatorService;
     @Autowired
     private LoggerService loggerService;
     @Autowired
@@ -31,17 +30,17 @@ public class MainController {
 
     @GetMapping(value = "/update_params")
     public @ResponseBody String updateParams() {
-        return updateParametersService.updateAgentParams();
+        return updateParametersService.updateManagerParams();
     }
 
     @GetMapping(value = "/update_device_params")
     public @ResponseBody String updateDeviceParams() {
-        return updateParametersService.updateLogicalDeviceParams();
+        return updateParametersService.updateDeviceParams();
     }
 
     @GetMapping(value = "/update_task_params")
     public @ResponseBody String updateTaskParams() {
-        return updateParametersService.updateTaskParams();
+        return updateParametersService.updateProgramParams();
     }
 
     @PostMapping("/check_device")
@@ -90,7 +89,7 @@ public class MainController {
 
     @GetMapping("/restore")
     public @ResponseBody String restore() {
-        timerService.createRestoreTimer();
+        timerCreatorService.createRestoreTimer();
         return "Restore process: Done";
     }
 

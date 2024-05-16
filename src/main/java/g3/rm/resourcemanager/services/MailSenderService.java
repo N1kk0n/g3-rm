@@ -1,8 +1,8 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.jpa_domain.AgentParam;
-import g3.rm.resourcemanager.jpa_domain.LogicalDeviceParam;
-import g3.rm.resourcemanager.repositories.AgentParamRepository;
+import g3.rm.resourcemanager.entities.ManagerParam;
+import g3.rm.resourcemanager.entities.DeviceParam;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.repositories.DeviceParamRepository;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
@@ -20,7 +20,7 @@ import java.util.Properties;
 @Service
 public class MailSenderService {
     @Autowired
-    private AgentParamRepository agentParamRepository;
+    private ManagerParamRepository managerParamRepository;
     @Autowired
     private DeviceParamRepository deviceParamRepository;
 
@@ -35,19 +35,19 @@ public class MailSenderService {
             LOGGER.info("Alarm mail is disabled for device: " + deviceName);
             return;
         }
-        AgentParam mailHostParam = agentParamRepository.getByName("ALARM_MAIL_HOST");
+        ManagerParam mailHostParam = managerParamRepository.getByParamName("ALARM_MAIL_HOST");
         if (mailHostParam == null) {
             LOGGER.error("Agent parameter ALARM_MAIL_HOST not found");
             return;
         }
 
-        AgentParam mailHostAddress = agentParamRepository.getByName("ALARM_MAIL_ADDRESS");
+        ManagerParam mailHostAddress = managerParamRepository.getByParamName("ALARM_MAIL_ADDRESS");
         if (mailHostAddress == null) {
             LOGGER.error("Agent parameter ALARM_MAIL_ADDRESS not found");
             return;
         }
-        String mailHost = mailHostParam.getValue();
-        String mailAddress = mailHostAddress.getValue();
+        String mailHost = mailHostParam.getParamValue();
+        String mailAddress = mailHostAddress.getParamValue();
         String subject = "Gambit check device: " + deviceName;
         String text = "======================\n Error on check device: " + deviceName + ". Check device ended with code: " + code + "\n======================";
         sendEmailMessage(mailAddress, mailHost, subject, text);
@@ -72,7 +72,7 @@ public class MailSenderService {
     }
 
     private boolean mailAlarmDisabled(String deviceName) {
-        LogicalDeviceParam mailAlarmParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "MAIL_ALARM");
+        DeviceParam mailAlarmParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "MAIL_ALARM");
         if (mailAlarmParam == null) {
             LOGGER.error("Logical device parameter MAIL_ALARM for device with name: " + deviceName + " not found. Mail alarm enabled");
             return false;
@@ -86,12 +86,12 @@ public class MailSenderService {
     }
 
     private boolean debugMode() {
-        AgentParam debugModeParam = agentParamRepository.getByName("AGENT_DEBUG_MODE");
+        ManagerParam debugModeParam = managerParamRepository.getByParamName("AGENT_DEBUG_MODE");
         if (debugModeParam == null) {
             LOGGER.error("Agent parameter with name: AGENT_DEBUG_MODE not found");
             return false;
         }
-        String debugMode = debugModeParam.getValue();
+        String debugMode = debugModeParam.getParamValue();
         debugMode = debugMode.toLowerCase();
         if (debugMode.equals("1") || debugMode.equals("true")) {
             return true;

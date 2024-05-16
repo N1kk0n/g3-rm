@@ -1,12 +1,25 @@
-package g3.rm.resourcemanager.jdbc_domain;
+package g3.rm.resourcemanager.entities;
 
-public class LogicalDeviceParam {
+
+import jakarta.persistence.*;
+
+@Entity
+public class DeviceParam {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "device_param_gen")
+    @SequenceGenerator(name = "device_param_gen", sequenceName = "DEVICE_PARAM_SEQ", allocationSize = 1)
+    private Long id;
     private Integer deviceId;
     private String deviceName;
     private String paramName;
     private String paramValue;
 
-    public LogicalDeviceParam() {
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Integer getDeviceId() {
@@ -21,8 +34,8 @@ public class LogicalDeviceParam {
         return deviceName;
     }
 
-    public void setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
+    public void setDeviceName(String lvuName) {
+        this.deviceName = lvuName;
     }
 
     public String getParamName() {
@@ -39,15 +52,5 @@ public class LogicalDeviceParam {
 
     public void setParamValue(String paramValue) {
         this.paramValue = paramValue;
-    }
-
-    @Override
-    public String toString() {
-        return "LogicalDeviceParam{" +
-                "deviceId=" + deviceId +
-                ", deviceName='" + deviceName + '\'' +
-                ", paramName='" + paramName + '\'' +
-                ", paramValue='" + paramValue + '\'' +
-                '}';
     }
 }

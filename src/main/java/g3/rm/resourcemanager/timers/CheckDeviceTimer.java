@@ -1,7 +1,7 @@
 package g3.rm.resourcemanager.timers;
 
-import g3.rm.resourcemanager.jpa_domain.LogicalDeviceParam;
-import g3.rm.resourcemanager.jpa_domain.TaskProcess;
+import g3.rm.resourcemanager.entities.DeviceParam;
+import g3.rm.resourcemanager.entities.TaskProcess;
 import g3.rm.resourcemanager.repositories.DeviceParamRepository;
 import g3.rm.resourcemanager.repositories.TaskProcessRepository;
 import g3.rm.resourcemanager.services.ProcessContainerService;
@@ -33,7 +33,7 @@ public class CheckDeviceTimer extends TimerTask {
     public void run() {
         LOGGER.info("Interrupting check device procedure. Device name: " + deviceName);
 
-        LogicalDeviceParam deviceParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "CHECK_PATH");
+        DeviceParam deviceParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "CHECK_PATH");
         if (deviceParam == null) {
             LOGGER.error("Device with name: " + deviceName + " not found in LOGICAL_DEVICE_PARAM");
         }

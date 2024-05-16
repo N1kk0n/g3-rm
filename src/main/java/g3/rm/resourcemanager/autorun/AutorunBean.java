@@ -2,6 +2,7 @@ package g3.rm.resourcemanager.autorun;
 
 import g3.rm.resourcemanager.services.LogCleanerService;
 import g3.rm.resourcemanager.services.ProcessContainerService;
+import g3.rm.resourcemanager.services.TimerCreatorService;
 import g3.rm.resourcemanager.services.UpdateParametersService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,11 @@ import java.util.Objects;
 
 @Component
 public class AutorunBean {
+    private final String MANAGER_NAME = "manager.name";
+    private final String HOST_PORT = "host.port";
+    private final String ROOT_CERT = "root.cert";
+    private final String USER_CERT = "user.cert";
+    private final String USER_KEY = "user.key.pk8";
     @Autowired
     private Environment environment;
     @Autowired
@@ -20,11 +26,8 @@ public class AutorunBean {
     private LogCleanerService logCleanerService;
     @Autowired
     private UpdateParametersService updateParametersService;
-
-    private final String AGENT_NAME="agent.name";
-    private final String CONFIG_DB_URL="config.url";
-    private final String CONFIG_DB_USER="config.user";
-    private final String CONFIG_DB_PASSWORD="config.password";
+    @Autowired
+    private TimerCreatorService timerCreatorService;
 
     @PostConstruct
     public void init() {
@@ -32,22 +35,27 @@ public class AutorunBean {
             System.exit(-1);
         }
         System.out.println("Input parameters has checked. Start Agent configuration update procedure...");
-        updateParametersService.updateAgentParams(environment.getProperty(AGENT_NAME));
-        updateParametersService.updateLogicalDeviceParams(environment.getProperty(AGENT_NAME));
-        updateParametersService.updateTaskParams(environment.getProperty(AGENT_NAME));
-        processContainerService.clearTaskProcesses();
-        logCleanerService.cleanOldTaskLogs();
+        updateParametersService.updateManagerParams(environment.getProperty(MANAGER_NAME));
+        updateParametersService.updateDeviceParams(environment.getProperty(MANAGER_NAME));
+        updateParametersService.updateProgramParams(environment.getProperty(MANAGER_NAME));
+//        processContainerService.clearTaskProcesses();
+//        logCleanerService.cleanOldTaskLogs();
+        timerCreatorService.createCheckDecisionTimer();
     }
 
     private boolean isParamsCorrect() {
-        String message = "Example: \"java -jar resource-agent.jar --agent.name=<name of agent>\\\n" +
-                "--config.url=<url to database with config>\\\n " +
-                "--config.user=<username for config db>\\\n " +
-                "--config.password=<password for config db>\n";
-        return isParamCorrect(AGENT_NAME, message) &&
-                isParamCorrect(CONFIG_DB_URL, message) &&
-                isParamCorrect(CONFIG_DB_USER, message) &&
-                isParamCorrect(CONFIG_DB_PASSWORD, message);
+        String message = """
+                Example: java -jar g3-rm.jar --manager.name=<resource manager name>\\
+                 --host.port=<host and port of database>\\
+                 --root.cert=<path to root certificate file>\\
+                 --user.cert=<path to user certificate file>\\
+                 --user.key.pk8=<path to key pk8 file>
+                """;
+        return isParamCorrect(MANAGER_NAME, message) &&
+                isParamCorrect(HOST_PORT, message) &&
+                isParamCorrect(ROOT_CERT, message) &&
+                isParamCorrect(USER_CERT, message) &&
+                isParamCorrect(USER_KEY, message);
     }
 
     private boolean isParamCorrect(String parameter, String message) {

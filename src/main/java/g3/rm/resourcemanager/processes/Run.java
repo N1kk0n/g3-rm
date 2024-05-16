@@ -1,17 +1,17 @@
 package g3.rm.resourcemanager.processes;
 
-import g3.rm.resourcemanager.jpa_domain.TaskParam;
-import g3.rm.resourcemanager.repositories.AgentParamRepository;
-import g3.rm.resourcemanager.repositories.TaskParamRepository;
+import g3.rm.resourcemanager.entities.ProgramParam;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
+import g3.rm.resourcemanager.repositories.ProgramParamRepository;
+import g3.rm.resourcemanager.services.SessionEventResponseService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
-import g3.rm.resourcemanager.data.TaskObject;
-import g3.rm.resourcemanager.jpa_domain.AgentParam;
+import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.entities.ManagerParam;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
 import g3.rm.resourcemanager.services.FileSystemService;
-import g3.rm.resourcemanager.services.HttpResponseService;
 import g3.rm.resourcemanager.services.LoggerService;
 import g3.rm.resourcemanager.services.ProcessContainerService;
 
@@ -25,11 +25,11 @@ import java.util.concurrent.CompletableFuture;
 
 public class Run {
     @Autowired
-    private AgentParamRepository agentParamRepository;
+    private ManagerParamRepository managerParamRepository;
     @Autowired
-    private TaskParamRepository taskParamRepository;
+    private ProgramParamRepository programParamRepository;
     @Autowired
-    private HttpResponseService responseService;
+    private SessionEventResponseService responseService;
     @Autowired
     private LoggerService loggerService;
     @Autowired
@@ -61,33 +61,33 @@ public class Run {
 
     @Async
     public CompletableFuture<String> start() {
-        responseService.sendRunInitResponse(taskObject.getTaskId(), taskObject.getSessionId());
-        TaskParam taskParam = taskParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), OPERATION);
-        if (taskParam == null) {
+        responseService.sendRunInitEvent(taskObject.getTaskId(), taskObject.getSessionId());
+        ProgramParam programParam = programParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), OPERATION);
+        if (programParam == null) {
             LOGGER.error("Unknown programId: " + this.taskObject.getProgramId());
-            responseService.sendRunDoneResponse(taskObject.getTaskId(),
+            responseService.sendRunDoneEvent(taskObject.getTaskId(),
                                                 taskObject.getSessionId(),
                                                 taskObject.getDeviceNameList(), -1, -1, "");
             eventPublisher.publishTaskEvent(ERROR, taskObject);
             return CompletableFuture.completedFuture(ERROR);
         }
-        String path = taskParam.getParamValue();
+        String path = programParam.getParamValue();
         if (fileSystemService.templateMarkerExists(this.taskObject.getProgramId())) {
-            String programHome = taskParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME").getParamValue();
-            String scriptName = agentParamRepository.getByName("RUN_NAME").getValue();
+            String programHome = programParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME").getParamValue();
+            String scriptName = managerParamRepository.getByParamName("RUN_NAME").getParamValue();
             path = programHome + File.separator + this.taskObject.getTaskId() + "_scripts" + File.separator + scriptName;
         }
         if (!new File(path).exists()) {
             LOGGER.error("File: " + path + " not found");
-            responseService.sendRunDoneResponse(taskObject.getTaskId(),
+            responseService.sendRunDoneEvent(taskObject.getTaskId(),
                                                 taskObject.getSessionId(),
                                                 taskObject.getDeviceNameList(), -1, -1, "");
             eventPublisher.publishTaskEvent(ERROR, taskObject);
             return CompletableFuture.completedFuture(ERROR);
         }
 
-        AgentParam agentParam = agentParamRepository.getByName("TASK_LOG_DIR");
-        String logDir = agentParam.getValue();
+        ManagerParam managerParam = managerParamRepository.getByParamName("TASK_LOG_DIR");
+        String logDir = managerParam.getParamValue();
         String outputLogPath = logDir + File.separator + taskObject.getTaskId() + File.separator + taskObject.getSessionId();
         String errorLogPath = logDir + File.separator + taskObject.getTaskId() + File.separator + taskObject.getSessionId();
         File outputLog = new File(outputLogPath);
@@ -130,7 +130,7 @@ public class Run {
         
         } catch (IOException ex) {
             LOGGER.error("Process execution error. Operation: " + OPERATION + ". Start process: " + args + ". Message: " + ex.getMessage(), ex);
-            responseService.sendRunDoneResponse(taskObject.getTaskId(),
+            responseService.sendRunDoneEvent(taskObject.getTaskId(),
                                                 taskObject.getSessionId(),
                                                 taskObject.getDeviceNameList(), exitCode, programCode, boomerangCode);
             eventPublisher.publishTaskEvent(ERROR, taskObject);
@@ -139,13 +139,13 @@ public class Run {
             LOGGER.info(ex.getMessage());
             waitForStopCompletion(this.taskObject.getTaskId());
             
-            responseService.sendRunDoneResponse(taskObject.getTaskId(),
+            responseService.sendRunDoneEvent(taskObject.getTaskId(),
                                                 taskObject.getSessionId(),
                                                 taskObject.getDeviceNameList(), exitCode, programCode, boomerangCode);
             eventPublisher.publishTaskEvent(STOP, taskObject);
             return CompletableFuture.completedFuture(STOP);
         }
-        responseService.sendRunDoneResponse(taskObject.getTaskId(),
+        responseService.sendRunDoneEvent(taskObject.getTaskId(),
                                             taskObject.getSessionId(),
                                             taskObject.getDeviceNameList(), exitCode, programCode, boomerangCode);
         if (exitCode != 0) {
@@ -159,8 +159,8 @@ public class Run {
     private int getProgramCode() {
         int programCode = 1;
         try {
-            TaskParam taskParam = taskParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME");
-            String homeDir = taskParam.getParamValue();
+            ProgramParam programParam = programParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME");
+            String homeDir = programParam.getParamValue();
             String programCodePath = homeDir + File.separator + this.taskObject.getTaskId() + "/" + this.taskObject.getTaskId() + ".kod";
             File taskCodeFile = new File(programCodePath);
             if (!taskCodeFile.exists()) {
@@ -184,8 +184,8 @@ public class Run {
     private String getBoomerangCode() {
         String boomerangCode = "";
         try {
-            TaskParam taskParam = taskParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME");
-            String homeDir = taskParam.getParamValue();
+            ProgramParam programParam = programParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME");
+            String homeDir = programParam.getParamValue();
             String taskCodePath = homeDir + File.separator + this.taskObject.getTaskId() + "/TaskCode";
             File taskCodeFile = new File(taskCodePath);
             if (!taskCodeFile.exists()) {

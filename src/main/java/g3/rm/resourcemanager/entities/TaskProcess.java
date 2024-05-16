@@ -1,4 +1,4 @@
-package g3.rm.resourcemanager.jpa_domain;
+package g3.rm.resourcemanager.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

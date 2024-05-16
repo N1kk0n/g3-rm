@@ -1,14 +1,13 @@
 package g3.rm.resourcemanager.timers;
 
-import g3.rm.resourcemanager.jpa_domain.RestoreStep;
+import g3.rm.resourcemanager.entities.RestoreStep;
 import g3.rm.resourcemanager.repositories.RestoreStepRepository;
-import g3.rm.resourcemanager.services.HttpResponseService;
-import g3.rm.resourcemanager.services.TimerService;
+import g3.rm.resourcemanager.services.SessionEventResponseService;
+import g3.rm.resourcemanager.services.TimerCreatorService;
 import jakarta.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 
 import java.util.List;
 import java.util.TimerTask;
@@ -17,9 +16,9 @@ public class RestoreTimer extends TimerTask {
     @Autowired
     private RestoreStepRepository restoreStepRepository;
     @Autowired
-    private TimerService timerService;
+    private TimerCreatorService timerCreatorService;
     @Autowired
-    private HttpResponseService httpResponseService;
+    private SessionEventResponseService sessionEventResponseService;
 
     private final Logger LOGGER = LogManager.getLogger("RestoreTimer");
 
@@ -32,14 +31,8 @@ public class RestoreTimer extends TimerTask {
         }
         try {
             for (RestoreStep step : restoreSteps) {
-                LOGGER.info("Restore call: " + step.getUrl());
-                JsonObject response = httpResponseService.sendRestRequest(step.getUrl(), HttpMethod.GET.name(), "");
-                if (requestCorrect(response)) {
-                    restoreStepRepository.delete(step);
-                } else {
-                    timerService.createRestoreTimer();
-                    return;
-                }
+                LOGGER.info("Restore query: " + step.getQuery());
+                LOGGER.info("Restore params: " + step.getParams());
                 Thread.sleep(1000);
             }
         } catch (InterruptedException ex) {

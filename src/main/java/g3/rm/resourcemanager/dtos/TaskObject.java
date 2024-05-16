@@ -1,4 +1,4 @@
-package g3.rm.resourcemanager.data;
+package g3.rm.resourcemanager.dtos;
 
 import java.util.ArrayList;
 import java.util.List;

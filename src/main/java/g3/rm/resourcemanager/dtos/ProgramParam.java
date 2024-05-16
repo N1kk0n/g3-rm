@@ -1,11 +1,11 @@
-package g3.rm.resourcemanager.jdbc_domain;
+package g3.rm.resourcemanager.dtos;
 
-public class TaskParam {
+public class ProgramParam {
     private Integer programId;
     private String paramName;
     private String paramValue;
 
-    public TaskParam() {
+    public ProgramParam() {
     }
 
     public Integer getProgramId() {

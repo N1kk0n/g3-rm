@@ -1,6 +1,6 @@
 package g3.rm.resourcemanager.timers;
 
-import g3.rm.resourcemanager.jpa_domain.TaskProcess;
+import g3.rm.resourcemanager.entities.TaskProcess;
 import g3.rm.resourcemanager.repositories.TaskProcessRepository;
 import g3.rm.resourcemanager.services.ProcessContainerService;
 import org.apache.logging.log4j.LogManager;
