@@ -1,9 +1,7 @@
 package g3.rm.resourcemanager.repositories;
 
 import g3.rm.resourcemanager.dtos.DecisionItem;
-import g3.rm.resourcemanager.dtos.ManagerParam;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -29,7 +27,7 @@ public class DecisionRepository {
     public List<DecisionItem> getDecision() {
         String managerName = environment.getProperty(MANAGER_NAME);
         String sql = """
-                select task_id, device_name
+                select task_id, program_id, device_name
                 from decision
                 where manager_name = :name
                 """;
@@ -39,6 +37,7 @@ public class DecisionRepository {
         return template.query(sql, sqlParameterSource, (resultSet, rowNum) -> {
             DecisionItem decisionItem = new DecisionItem();
             decisionItem.setTaskId(resultSet.getLong("TASK_ID"));
+            decisionItem.setProgramId(resultSet.getInt("PROGRAM_ID"));
             decisionItem.setDeviceName(resultSet.getString("DEVICE_NAME"));
             return decisionItem;
         });

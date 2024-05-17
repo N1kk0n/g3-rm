@@ -33,7 +33,7 @@ public class StartTaskCountdown extends TimerTask {
     public void run() {
         try {
             if (sessionRepository.anotherSessionExists(task.getTaskId())) {
-                LOGGER.info("Restart countdown for task ID: " + task.getTaskId() + ", device list: " + task.getDeviceNameList());
+                LOGGER.info("Restart countdown for task ID: " + task.getTaskId() + ", program ID: " + task.getProgramId() + ", device list: " + task.getDeviceNameList());
 
                 timerCreatorService.createStartTaskCountdown(task);
             } else {

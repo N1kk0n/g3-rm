@@ -48,13 +48,14 @@ public class DecisionUpdateService {
 
         for (DecisionItem item : decisionItems) {
             long taskId = item.getTaskId();
+            int programId = item.getProgramId();
             String deviceName = item.getDeviceName();
             if (!taskIds.contains(taskId)) {
                 taskIds.add(taskId);
 
                 task = new Task();
                 task.setTaskId(taskId);
-
+                task.setProgramId(programId);
                 deviceNameList = new LinkedList<>();
                 deviceNameList.add(deviceName);
 
