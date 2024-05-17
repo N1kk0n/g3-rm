@@ -6,7 +6,7 @@ import g3.rm.resourcemanager.repositories.DeviceParamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
-import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.dtos.Task;
 
 @Service
 public class ProcessCreatorService {
@@ -19,71 +19,60 @@ public class ProcessCreatorService {
     @Autowired
     private DeviceParamRepository deviceParamRepository;
     
-    public void create(String operation, TaskObject taskObject) {
+    public void create(String operation, Task task) {
         switch (operation) {
-            case "CHECKDEVICE": {
-                String deviceName = taskObject.getDeviceNameList().get(0);
+            case "CHECKDEVICE" -> {
+                String deviceName = task.getDeviceNameList().get(0);
                 DeviceParam deviceParam = deviceParamRepository.findByDeviceNameAndParamName(deviceName, "CHECK_PATH");
                 if (deviceParam != null) {
-                    taskObject.setTaskId(deviceParam.getDeviceId());
+                    task.setTaskId(deviceParam.getDeviceId());
                 }
 
                 CheckDevice contextBean = context.getBean(CheckDevice.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.start(), operation, taskObject.getTaskId());
-                break;
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.start(), operation, task.getTaskId());
             }
-            case "DOWNLOAD": {
-                providerService.download(taskObject);
-                break;
+            case "DOWNLOAD" -> {
+                providerService.download(task);
             }
-            case "CHECK": {
+            case "CHECK" -> {
                 CheckTask contextBean = context.getBean(CheckTask.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.start(), operation, taskObject.getTaskId());
-                break;
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.start(), operation, task.getTaskId());
             }
-            case "DEPLOY": {
+            case "DEPLOY" -> {
                 Deploy contextBean = context.getBean(Deploy.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.start(), operation, taskObject.getTaskId());
-                break;
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.start(), operation, task.getTaskId());
             }
-            case "RUN": {
+            case "RUN" -> {
                 Run contextBean = context.getBean(Run.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.start(), operation, taskObject.getTaskId());
-                break;
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.start(), operation, task.getTaskId());
             }
-            case "STOP": {
+            case "STOP" -> {
                 Stop contextBean = context.getBean(Stop.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.start(), operation, taskObject.getTaskId());
-                break;
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.start(), operation, task.getTaskId());
             }
-            case "COLLECT": {
+            case "COLLECT" -> {
                 Collect contextBean = context.getBean(Collect.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.start(), operation, taskObject.getTaskId());
-                break;
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.start(), operation, task.getTaskId());
             }
-            case "UPLOAD": {
-                providerService.upload(taskObject);
-                break;
+            case "UPLOAD" -> {
+                providerService.upload(task);
             }
-            case "PROGRESSINFO": {
+            case "PROGRESSINFO" -> {
                 ProgressInfo contextBean = context.getBean(ProgressInfo.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.start(), operation, taskObject.getTaskId());
-                break;
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.start(), operation, task.getTaskId());
             }
-            case "FINALPROGRESSINFO": {
+            case "FINALPROGRESSINFO" -> {
                 FinalProgressInfo contextBean = context.getBean(FinalProgressInfo.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.start(), operation, taskObject.getTaskId());
-                break;
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.start(), operation, task.getTaskId());
             }
         }
-
     }
 }

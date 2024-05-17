@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.dtos.Task;
 
 @Component
 public class RouterEventPublisher {
@@ -17,11 +17,11 @@ public class RouterEventPublisher {
 
     private final Logger LOGGER = LogManager.getLogger("RouterEventPublisher");
 
-    public void publishTaskEvent(String message, TaskObject taskObject) {
+    public void publishTaskEvent(String message, Task task) {
         String operation = message.substring(0, message.lastIndexOf("_"));
-        waitForInsertCompletion(operation, taskObject.getTaskId());
+        waitForInsertCompletion(operation, task.getTaskId());
         
-        RouterEvent routerEvent = new RouterEvent(this, message, taskObject);
+        RouterEvent routerEvent = new RouterEvent(this, message, task);
         eventPublisher.publishEvent(routerEvent);
     }
 

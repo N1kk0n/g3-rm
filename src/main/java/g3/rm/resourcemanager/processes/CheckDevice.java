@@ -1,6 +1,6 @@
 package g3.rm.resourcemanager.processes;
 
-import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.entities.DeviceParam;
 import g3.rm.resourcemanager.repositories.DeviceParamRepository;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
@@ -28,7 +28,7 @@ public class CheckDevice {
     @Autowired
     private RouterEventPublisher eventPublisher;
 
-    private TaskObject taskObject;
+    private Task task;
 
     private final Logger LOGGER = LogManager.getLogger("CheckDevice");
     private final String OPERATION = "CHECKDEVICE";
@@ -38,18 +38,17 @@ public class CheckDevice {
     public CheckDevice() {
     }
 
-    public TaskObject getTaskObject() {
-        return taskObject;
+    public Task getTaskObject() {
+        return task;
     }
 
-    public void setTaskObject(TaskObject taskObject) {
-        this.taskObject = taskObject;
+    public void setTaskObject(Task task) {
+        this.task = task;
     }
 
     @Async
     public CompletableFuture<String> start() {
-        long eventId = taskObject.getEventId();
-        String deviceName = taskObject.getDeviceNameList().get(0);
+        String deviceName = task.getDeviceNameList().get(0);
 
         Timer timer = timerCreatorService.createCheckDeviceTimer(deviceName);
 
@@ -57,14 +56,14 @@ public class CheckDevice {
         if (deviceParam == null) {
             LOGGER.error("Unknown device name: " + deviceName + " with paramName: CHECK_PATH");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         }
         String checkScriptPath = deviceParam.getParamValue();
         if(!new File(checkScriptPath).exists()) {
             LOGGER.error("File: " + checkScriptPath + " not found");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         }
 
@@ -86,19 +85,19 @@ public class CheckDevice {
         } catch (IOException ex) {
             LOGGER.error("Process execution error. Operation: " + OPERATION + ". Start process: " + args + ". Message: " + ex.getMessage(), ex);
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         } catch (InterruptedException ex) {
             LOGGER.error("Process was interrupted. Operation: " + OPERATION + ". Start process: " + args);
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         }
         timerCreatorService.cancelTimer(timer);
         if (exitCode != 0) {
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         }
-        eventPublisher.publishTaskEvent(SUCCESS, taskObject);
+        eventPublisher.publishTaskEvent(SUCCESS, task);
         return CompletableFuture.completedFuture(SUCCESS);
     }
 }

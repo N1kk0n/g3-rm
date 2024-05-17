@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
-import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.dtos.Task;
 
 @Component
 public class RouterEventListener implements ApplicationListener<RouterEvent> {
@@ -31,89 +31,80 @@ public class RouterEventListener implements ApplicationListener<RouterEvent> {
     @Override
     public void onApplicationEvent(RouterEvent routerEvent) {
         String taskMessage = routerEvent.getMessage();
-        TaskObject taskObject = routerEvent.getTaskObject();
+        Task task = routerEvent.getTaskObject();
         String operation = taskMessage.split("_")[0];
 
-        Iterable<TaskProcess> processes = taskProcessRepository.findAllByEntityIdAndOperation(taskObject.getTaskId(), operation);
+        Iterable<TaskProcess> processes = taskProcessRepository.findAllByEntityIdAndOperation(task.getTaskId(), operation);
         for (TaskProcess taskProcess : processes) {
             processContainerService.removeProcess(taskProcess.getStageId());
         }
 
         switch (taskMessage) {
             case "DOWNLOAD_DONE" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): DOWNLOAD_DONE. Next operation: DEPLOY");
-                processCreatorService.create("DEPLOY", taskObject);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): DOWNLOAD_DONE. Next operation: DEPLOY");
+                processCreatorService.create("DEPLOY", task);
             }
             case "DOWNLOAD_ERROR" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): DOWNLOAD_ERROR. Clean work folder.");
-                taskObject.setSessionStatus("ERROR");
-                endSession(taskObject, true);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): DOWNLOAD_ERROR. Clean work folder.");
+                task.setSessionStatus("ERROR");
+                endSession(task, true);
             }
             case "DEPLOY_DONE" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): DEPLOY_DONE. Next operation: RUN");
-                processCreatorService.create("RUN", taskObject);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): DEPLOY_DONE. Next operation: RUN");
+                processCreatorService.create("RUN", task);
             }
             case "DEPLOY_ERROR" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): DEPLOY_ERROR. Clean work folder.");
-                taskObject.setSessionStatus("ERROR");
-                endSession(taskObject, true);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): DEPLOY_ERROR. Clean work folder.");
+                task.setSessionStatus("ERROR");
+                endSession(task, true);
             }
             case "RUN_DONE" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): RUN_DONE. Next operation: COLLECT");
-                taskObject.setSessionStatus("DONE");
-                processCreatorService.create("FINALPROGRESSINFO", taskObject);
-                processCreatorService.create("COLLECT", taskObject);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): RUN_DONE. Next operation: COLLECT");
+                task.setSessionStatus("DONE");
+                processCreatorService.create("FINALPROGRESSINFO", task);
+                processCreatorService.create("COLLECT", task);
             }
             case "RUN_STOP" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): RUN_STOP. Next operation: COLLECT");
-                taskObject.setSessionStatus("STOP");
-                processCreatorService.create("COLLECT", taskObject);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): RUN_STOP. Next operation: COLLECT");
+                task.setSessionStatus("STOP");
+                processCreatorService.create("COLLECT", task);
             }
             case "RUN_ERROR" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): RUN_ERROR. Next operation: COLLECT");
-                taskObject.setSessionStatus("ERROR");
-                processCreatorService.create("COLLECT", taskObject);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): RUN_ERROR. Next operation: COLLECT");
+                task.setSessionStatus("ERROR");
+                processCreatorService.create("COLLECT", task);
             }
             case "COLLECT_DONE" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): COLLECT_DONE. Next operation: UPLOAD");
-                processCreatorService.create("UPLOAD", taskObject);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): COLLECT_DONE. Next operation: UPLOAD");
+                processCreatorService.create("UPLOAD", task);
             }
             case "COLLECT_ERROR" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): COLLECT_ERROR. Save RUN results.");
-                taskObject.setSessionStatus("ERROR");
-                endSession(taskObject, false);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): COLLECT_ERROR. Save RUN results.");
+                task.setSessionStatus("ERROR");
+                endSession(task, false);
             }
             case "UPLOAD_DONE" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): UPLOAD_DONE. Clean work folder.");
-                endSession(taskObject, true);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): UPLOAD_DONE. Clean work folder.");
+                endSession(task, true);
             }
             case "UPLOAD_ERROR" -> {
-                LOGGER.info(taskObject.getTaskId() + " (session: " + taskObject.getSessionId() + "): UPLOAD_ERROR. Save RUN results.");
-                taskObject.setSessionStatus("ERROR");
-                endSession(taskObject, false);
+                LOGGER.info(task.getTaskId() + " (session: " + task.getSessionId() + "): UPLOAD_ERROR. Save RUN results.");
+                task.setSessionStatus("ERROR");
+                endSession(task, false);
             }
         }
     }
 
-    private void endSession(TaskObject taskObject, boolean clearWorkFolder) {
-        switch (taskObject.getSessionStatus()) {
-            case "DONE": 
-                responseService.sendSessionEnd(taskObject.getTaskId(),
-                                                   taskObject.getSessionId(), 0);
-                break;
-            case "STOP": 
-                responseService.sendSessionStop(taskObject.getTaskId(),
-                                                    taskObject.getSessionId(), 0);
-                break;
-            case "ERROR": 
-                responseService.sendSessionEnd(taskObject.getTaskId(),
-                                                   taskObject.getSessionId(), -1);
-                break;
+    private void endSession(Task task, boolean clearWorkFolder) {
+        switch (task.getSessionStatus()) {
+            case "DONE"  -> responseService.sendSessionEnd(task.getTaskId(), task.getSessionId(), 0);
+            case "STOP"  -> responseService.sendSessionStop(task.getTaskId(), task.getSessionId(), 0);
+            case "ERROR" -> responseService.sendSessionEnd(task.getTaskId(), task.getSessionId(), -1);
         }
         if (clearWorkFolder) {
-            fileSystemService.removeTaskFolder(taskObject.getTaskId(), taskObject.getProgramId());
+            fileSystemService.removeTaskFolder(task.getTaskId(), task.getProgramId());
         }
-        fileSystemService.removeScriptsFolder(taskObject.getTaskId(), taskObject.getProgramId());
+        fileSystemService.removeScriptsFolder(task.getTaskId(), task.getProgramId());
     }
 }
 

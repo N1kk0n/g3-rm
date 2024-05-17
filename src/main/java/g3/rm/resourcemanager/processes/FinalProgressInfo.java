@@ -10,7 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
-import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
 import g3.rm.resourcemanager.services.FileSystemService;
 
@@ -34,7 +34,7 @@ public class FinalProgressInfo {
     @Autowired
     private RouterEventPublisher eventPublisher;
 
-    private TaskObject taskObject;
+    private Task task;
 
     private final Logger LOGGER = LogManager.getLogger("FinalProgressInfo");
     private final String OPERATION = "FINALPROGRESSINFO";
@@ -44,37 +44,37 @@ public class FinalProgressInfo {
     public FinalProgressInfo() {
     }
 
-    public TaskObject getTaskObject() {
-        return taskObject;
+    public Task getTaskObject() {
+        return task;
     }
 
-    public void setTaskObject(TaskObject taskObject) {
-        this.taskObject = taskObject;
+    public void setTaskObject(Task task) {
+        this.task = task;
     }
 
     @Async
     public CompletableFuture<String> start() {
-        ProgramParam programParam = programParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "PROGRESSINFO");
+        ProgramParam programParam = programParamRepository.findByProgramIdAndParamName(this.task.getProgramId(), "PROGRESSINFO");
         if (programParam == null) {
-            LOGGER.error("Unknown programId: " + this.taskObject.getProgramId());
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            LOGGER.error("Unknown programId: " + this.task.getProgramId());
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         }
         String path = programParam.getParamValue();
-        if (fileSystemService.templateMarkerExists(this.taskObject.getProgramId())) {
-            String programHome = programParamRepository.findByProgramIdAndParamName(this.taskObject.getProgramId(), "HOME").getParamValue();
+        if (fileSystemService.templateMarkerExists(this.task.getProgramId())) {
+            String programHome = programParamRepository.findByProgramIdAndParamName(this.task.getProgramId(), "HOME").getParamValue();
             String scriptName = managerParamRepository.getByParamName("PROGRESS_INFO_NAME").getParamValue();
-            path = programHome + File.separator + this.taskObject.getTaskId() + "_scripts" + File.separator + scriptName;
+            path = programHome + File.separator + this.task.getTaskId() + "_scripts" + File.separator + scriptName;
         }
         if (!new File(path).exists()) {
             LOGGER.error("File: " + path + " not found");
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         }
 
         List<String> args = new LinkedList<>();
         args.add(path);
-        args.add(String.valueOf(this.taskObject.getTaskId()));
+        args.add(String.valueOf(this.task.getTaskId()));
 
         Process process;
         int exitCode;
@@ -82,7 +82,7 @@ public class FinalProgressInfo {
             ProcessBuilder processBuilder = new ProcessBuilder(args);
             process = processBuilder.start();
 
-            LOGGER.info("Operation: " + OPERATION + " (Task ID: " + taskObject.getTaskId() + "). Start process: " + args);
+            LOGGER.info("Operation: " + OPERATION + " (Task ID: " + task.getTaskId() + "). Start process: " + args);
 
             process.waitFor();
             exitCode = process.exitValue();
@@ -108,25 +108,25 @@ public class FinalProgressInfo {
                 }
                 jsonObjectBuilder.add(key, value);
             }
-            jsonObjectBuilder.add("taskId", this.taskObject.getTaskId());
+            jsonObjectBuilder.add("taskId", this.task.getTaskId());
             String progressInfo = jsonObjectBuilder.build().toString();
 
-            LOGGER.info("Operation: " + OPERATION + " (Task ID: " + taskObject.getTaskId() + "). Exit value: " + exitCode);
+            LOGGER.info("Operation: " + OPERATION + " (Task ID: " + task.getTaskId() + "). Exit value: " + exitCode);
             responseService.setProgressInfo(progressInfo);
         } catch (IOException ex) {
             LOGGER.error("Process execution error. Operation: " + OPERATION + ". Start process: " + args + ". Message: " + ex.getMessage(), ex);
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         } catch (InterruptedException ex) {
             LOGGER.error("Process was interrupted. Operation: " + OPERATION + ". Start process: " + args);
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         }
         if (exitCode != 0) {
-            eventPublisher.publishTaskEvent(ERROR, taskObject);
+            eventPublisher.publishTaskEvent(ERROR, task);
             return CompletableFuture.completedFuture(ERROR);
         }
-        eventPublisher.publishTaskEvent(SUCCESS, taskObject);
+        eventPublisher.publishTaskEvent(SUCCESS, task);
         return CompletableFuture.completedFuture(SUCCESS);
     }
 }

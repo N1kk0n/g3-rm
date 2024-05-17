@@ -1,6 +1,6 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.datasources.Ceph;
 import g3.rm.resourcemanager.datasources.OracleDB;
 import g3.rm.resourcemanager.entities.ManagerParam;
@@ -32,59 +32,59 @@ public class DataProviderService {
     public DataProviderService() {
     }
 
-    public void download(TaskObject taskObject) {
+    public void download(Task task) {
         ManagerParam dataSourceParam = managerParamRepository.getByParamName("DATA_SOURCE");
         if (dataSourceParam == null) {
             LOGGER.error("Agent parameter DATA_SOURCE not found");
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return;
         }
         String dataSource = dataSourceParam.getParamValue();
         switch (dataSource) {
             case "ceph": {
                 Ceph contextBean = context.getBean(Ceph.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.download(), "DOWNLOAD", taskObject.getTaskId());
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.download(), "DOWNLOAD", task.getTaskId());
                 break;
             }
             case "oracle": {
                 OracleDB contextBean = context.getBean(OracleDB.class);
-                contextBean.setTaskObject(taskObject);
+                contextBean.setTaskObject(task);
                 contextBean.setDataSource(initOracleDataSource());
-                processContainerService.addProcess(contextBean.download(), "DOWNLOAD", taskObject.getTaskId());
+                processContainerService.addProcess(contextBean.download(), "DOWNLOAD", task.getTaskId());
                 break;
             }
             default:
                 LOGGER.error("Download error. Wrong DATA_SOURCE value in AgentParams. Must be [ oracle | ceph ]");
-                eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+                eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
         }
     }
 
-    public void upload(TaskObject taskObject) {
+    public void upload(Task task) {
         ManagerParam dataSourceParam = managerParamRepository.getByParamName("DATA_SOURCE");
         if (dataSourceParam == null) {
             LOGGER.error("Agent parameter DATA_SOURCE not found");
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return;
         }
         String dataSourceType = dataSourceParam.getParamValue();
         switch (dataSourceType) {
             case "ceph": {
                 Ceph contextBean = context.getBean(Ceph.class);
-                contextBean.setTaskObject(taskObject);
-                processContainerService.addProcess(contextBean.upload(), "UPLOAD", taskObject.getTaskId());
+                contextBean.setTaskObject(task);
+                processContainerService.addProcess(contextBean.upload(), "UPLOAD", task.getTaskId());
                 break;
             }
             case "oracle": {
                 OracleDB contextBean = context.getBean(OracleDB.class);
-                contextBean.setTaskObject(taskObject);
+                contextBean.setTaskObject(task);
                 contextBean.setDataSource(initOracleDataSource());
-                processContainerService.addProcess(contextBean.upload(), "UPLOAD", taskObject.getTaskId());
+                processContainerService.addProcess(contextBean.upload(), "UPLOAD", task.getTaskId());
                 break;
             }
             default: 
                 LOGGER.error("Upload error. Wrong DATA_SOURCE value in AgentParams. Must be [ oracle | ceph ]");
-                eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+                eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
         }
     }
 

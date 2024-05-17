@@ -6,7 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
-import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
 import g3.rm.resourcemanager.services.FileSystemService;
 import g3.rm.resourcemanager.services.TimerCreatorService;
@@ -32,7 +32,7 @@ public class OracleDB {
     @Autowired
     private RouterEventPublisher eventPublisher;
 
-    private TaskObject taskObject;
+    private Task task;
     private DataSource dataSource;
 
     private final Logger LOGGER = LogManager.getLogger("OracleDB");
@@ -40,12 +40,12 @@ public class OracleDB {
     public OracleDB() {
     }
 
-    public TaskObject getTaskObject() {
-        return taskObject;
+    public Task getTaskObject() {
+        return task;
     }
 
-    public void setTaskObject(TaskObject taskObject) {
-        this.taskObject = taskObject;
+    public void setTaskObject(Task task) {
+        this.task = task;
     }
 
     public void setDataSource(DataSource dataSource) {
@@ -54,38 +54,38 @@ public class OracleDB {
 
     @Async
     public CompletableFuture<String> download() {
-       Timer timer = timerCreatorService.createDownloadTimer(taskObject.getTaskId());
-        if (!programParamRepository.existsByProgramId(taskObject.getProgramId())) {
-            LOGGER.error("Indication " + taskObject.getProgramId() + " not found");
+       Timer timer = timerCreatorService.createDownloadTimer(task.getTaskId());
+        if (!programParamRepository.existsByProgramId(task.getProgramId())) {
+            LOGGER.error("Indication " + task.getProgramId() + " not found");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
 
-        String homeDir = programParamRepository.findByProgramIdAndParamName(taskObject.getProgramId(), "HOME").getParamValue();
-        String taskDir = homeDir + File.separator + taskObject.getTaskId();
+        String homeDir = programParamRepository.findByProgramIdAndParamName(task.getProgramId(), "HOME").getParamValue();
+        String taskDir = homeDir + File.separator + task.getTaskId();
 
-        if (!fileSystemService.taskFolderPrepared(taskObject.getTaskId(), taskObject.getProgramId(), taskObject.getDeviceNameList())) {
+        if (!fileSystemService.taskFolderPrepared(task.getTaskId(), task.getProgramId(), task.getDeviceNameList())) {
             LOGGER.error("Error while prepare task folder: " + taskDir);
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
 
-        String archivePath = taskDir + File.separator + taskObject.getTaskId() + ".zip";
+        String archivePath = taskDir + File.separator + task.getTaskId() + ".zip";
 
         int BUFFER_SIZE = 1048576;
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement =
                      connection.prepareStatement("SELECT DATASET FROM DM_TASK_DATA WHERE TASK_ID=?")) {
-            preparedStatement.setLong(1, taskObject.getTaskId());
+            preparedStatement.setLong(1, task.getTaskId());
             ResultSet resultSet = preparedStatement.executeQuery();
             Blob blob;
             if (!resultSet.next())
-                throw new SQLException("Download data " + taskObject.getTaskId() + ".zip from Oracle is failed. Reason: data not found");
+                throw new SQLException("Download data " + task.getTaskId() + ".zip from Oracle is failed. Reason: data not found");
             blob = resultSet.getBlob("DATASET");
             if (blob == null)
-                throw new SQLException("Download data " + taskObject.getTaskId() + ".zip from Oracle is failed. Reason: data is empty or null");
+                throw new SQLException("Download data " + task.getTaskId() + ".zip from Oracle is failed. Reason: data is empty or null");
 
             File dataFile = new File(archivePath);
             try (InputStream inputStream = blob.getBinaryStream();
@@ -101,42 +101,42 @@ public class OracleDB {
             int unzipResult = operation.unzip(archivePath, dataFile.getParent());
             if (unzipResult == -1) {
                 LOGGER.error("Error while unzip " + archivePath + " after download.");
-                eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+                eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
                 return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
             }
         } catch (SQLException ex) {
             LOGGER.error("Error while download. Message: " + ex.getMessage(), ex);
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         } catch (IOException ex) {
             LOGGER.error("Download was interrupted. Data: " + archivePath, ex);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
         timerCreatorService.cancelTimer(timer);
-        updateLastDownload(taskObject.getTaskId());
-        eventPublisher.publishTaskEvent("DOWNLOAD_DONE", taskObject);
+        updateLastDownload(task.getTaskId());
+        eventPublisher.publishTaskEvent("DOWNLOAD_DONE", task);
         return CompletableFuture.completedFuture("DOWNLOAD_DONE");
     }
 
     @Async
     public CompletableFuture<String> upload() {
-        Timer timer = timerCreatorService.createUploadTimer(taskObject.getTaskId());
-        if (!programParamRepository.existsByProgramId(taskObject.getProgramId())) {
-            LOGGER.error("Indication " + taskObject.getProgramId() + " not found");
+        Timer timer = timerCreatorService.createUploadTimer(task.getTaskId());
+        if (!programParamRepository.existsByProgramId(task.getProgramId())) {
+            LOGGER.error("Indication " + task.getProgramId() + " not found");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
 
-        String homeDir = programParamRepository.findByProgramIdAndParamName(taskObject.getProgramId(), "HOME").getParamValue();
-        String taskDir = homeDir + File.separator + taskObject.getTaskId();
-        String archivePath = taskDir + File.separator + taskObject.getTaskId() + ".zip";
+        String homeDir = programParamRepository.findByProgramIdAndParamName(task.getProgramId(), "HOME").getParamValue();
+        String taskDir = homeDir + File.separator + task.getTaskId();
+        String archivePath = taskDir + File.separator + task.getTaskId() + ".zip";
 
         if (debugMode()) {
-            LOGGER.debug("Upload data [DEBUG MODE]: " + archivePath + " to Oracle DB [table: g3_DM.DM_TASK_DATA, task_id: " + taskObject.getTaskId() + "]");
-            eventPublisher.publishTaskEvent("UPLOAD_DONE", taskObject);
+            LOGGER.debug("Upload data [DEBUG MODE]: " + archivePath + " to Oracle DB [table: g3_DM.DM_TASK_DATA, task_id: " + task.getTaskId() + "]");
+            eventPublisher.publishTaskEvent("UPLOAD_DONE", task);
             return CompletableFuture.completedFuture("UPLOAD_DONE");
         }
 
@@ -146,13 +146,13 @@ public class OracleDB {
         if (zipResult == -1) {
             LOGGER.error("Error while zip " + archivePath + " before upload.");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
         if (!zipFile.exists()) {
             LOGGER.error("File " + archivePath + " not found");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
 
@@ -161,22 +161,22 @@ public class OracleDB {
                      connection.prepareStatement("update DM_TASK_DATA set DATASET=? where TASK_ID=?")) {
             try (FileInputStream fileInputStream = new FileInputStream(zipFile)) {
                 preparedStatement.setBinaryStream(1, fileInputStream);
-                preparedStatement.setLong(2, taskObject.getTaskId());
+                preparedStatement.setLong(2, task.getTaskId());
                 preparedStatement.execute();
             }
         } catch (SQLException ex) {
             LOGGER.error("Error while upload. Message: " + ex.getMessage(), ex);
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         } catch (IOException ex) {
             LOGGER.error("Upload was interrupted. Data: " + archivePath, ex);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
         timerCreatorService.cancelTimer(timer);
-        updateLastUpload(taskObject.getTaskId());
-        eventPublisher.publishTaskEvent("UPLOAD_DONE", taskObject);
+        updateLastUpload(task.getTaskId());
+        eventPublisher.publishTaskEvent("UPLOAD_DONE", task);
         return CompletableFuture.completedFuture("UPLOAD_DONE");
     }
 

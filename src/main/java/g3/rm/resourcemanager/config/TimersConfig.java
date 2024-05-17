@@ -72,4 +72,10 @@ public class TimersConfig {
     UploadTimer uploadTimer() {
         return new UploadTimer();
     }
+
+    @Bean
+    @Scope("prototype")
+    StartTaskCountdown startTaskCountdown() {
+        return new StartTaskCountdown();
+    }
 }

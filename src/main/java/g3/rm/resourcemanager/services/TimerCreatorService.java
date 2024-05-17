@@ -1,5 +1,6 @@
 package g3.rm.resourcemanager.services;
 
+import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.entities.ManagerParam;
 import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.timers.*;
@@ -19,6 +20,9 @@ public class TimerCreatorService {
     private ManagerParamRepository managerParamRepository;
 
     private final Logger LOGGER = LogManager.getLogger("TimerService");
+
+    private final int DECISION_UPDATE_TIMEOUT = 30;
+    private final int START_TASK_COUNTDOWN = 10;
 
     public Timer createCheckDeviceTimer(String deviceName) {
         if (debugMode()) {
@@ -186,19 +190,24 @@ public class TimerCreatorService {
         return timer;
     }
 
-    public Timer createLogCleanerTimer() {
+    public void createLogCleanerTimer() {
         long timerDelay = 24 * 3600;
         Timer timer = new Timer("LogCleanerTimer", true);
         LogCleanerTimer restoreTimer = applicationContext.getBean(LogCleanerTimer.class);
         timer.schedule(restoreTimer, timerDelay * 1000);
-        return timer;
     }
 
-    public Timer createCheckDecisionTimer() {
+    public void createCheckDecisionTimer() {
         Timer timer = new Timer("DecisionCreatorTimer", true);
         CheckDecisionTimer checkDecisionTimer = applicationContext.getBean(CheckDecisionTimer.class);
-        timer.schedule(checkDecisionTimer, 3 * 1000);
-        return timer;
+        timer.schedule(checkDecisionTimer, DECISION_UPDATE_TIMEOUT * 1000);
+    }
+
+    public void createStartTaskCountdown(Task task) {
+        Timer timer = new Timer("StartTaskCountDown", true);
+        StartTaskCountdown startTaskCountdown = applicationContext.getBean(StartTaskCountdown.class);
+        startTaskCountdown.setTask(task);
+        timer.schedule(startTaskCountdown, START_TASK_COUNTDOWN * 1000);
     }
 
     public void cancelTimer(Timer timer) {

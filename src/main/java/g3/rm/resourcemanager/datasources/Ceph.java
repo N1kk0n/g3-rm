@@ -20,7 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
-import g3.rm.resourcemanager.dtos.TaskObject;
+import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.repositories.ProgramParamRepository;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
@@ -47,38 +47,38 @@ public class Ceph {
     @Autowired
     private RouterEventPublisher eventPublisher;
 
-    private TaskObject taskObject;
+    private Task task;
 
     private final Logger LOGGER = LogManager.getLogger("Ceph");
 
     public Ceph() {
     }
 
-    public TaskObject getTaskObject() {
-        return taskObject;
+    public Task getTaskObject() {
+        return task;
     }
 
-    public void setTaskObject(TaskObject taskObject) {
-        this.taskObject = taskObject;
+    public void setTaskObject(Task task) {
+        this.task = task;
     }
 
     @Async
     public CompletableFuture<String> download() {
-        Timer timer = timerCreatorService.createDownloadTimer(taskObject.getTaskId());
-        if (!programParamRepository.existsByProgramId(taskObject.getProgramId())) {
-            LOGGER.error("Indication " + taskObject.getProgramId() + " not found");
+        Timer timer = timerCreatorService.createDownloadTimer(task.getTaskId());
+        if (!programParamRepository.existsByProgramId(task.getProgramId())) {
+            LOGGER.error("Indication " + task.getProgramId() + " not found");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
 
-        String homeDir = programParamRepository.findByProgramIdAndParamName(taskObject.getProgramId(), "HOME").getParamValue();
-        String taskDir = homeDir + File.separator + taskObject.getTaskId();
+        String homeDir = programParamRepository.findByProgramIdAndParamName(task.getProgramId(), "HOME").getParamValue();
+        String taskDir = homeDir + File.separator + task.getTaskId();
 
-        if (!fileSystemService.taskFolderPrepared(taskObject.getTaskId(), taskObject.getProgramId(), taskObject.getDeviceNameList())) {
+        if (!fileSystemService.taskFolderPrepared(task.getTaskId(), task.getProgramId(), task.getDeviceNameList())) {
             LOGGER.error("Error while prepare task folder: " + taskDir);
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
 
@@ -97,23 +97,23 @@ public class Ceph {
         if (conn == null) {
             LOGGER.error("Connection to: " + cephHost + " failed");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
-        if (!conn.doesBucketExistV2(taskObject.getBucketName())) {
-            LOGGER.error("Bucket with name '" + taskObject.getBucketName() + "' is not exist");
+        if (!conn.doesBucketExistV2(task.getBucketName())) {
+            LOGGER.error("Bucket with name '" + task.getBucketName() + "' is not exist");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
-        if (!conn.doesObjectExist(taskObject.getBucketName(), taskObject.getObjectName())) {
-            LOGGER.error("Object: " + taskObject.getObjectName() + " not exist");
+        if (!conn.doesObjectExist(task.getBucketName(), task.getObjectName())) {
+            LOGGER.error("Object: " + task.getObjectName() + " not exist");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         }
 
-        String archivePath = taskDir + File.separator + taskObject.getTaskId() + ".zip";
+        String archivePath = taskDir + File.separator + task.getTaskId() + ".zip";
         File dataFile = new File(archivePath);
         if (dataFile.exists()) {
             dataFile.delete();
@@ -121,7 +121,7 @@ public class Ceph {
         TransferManager transferManager = null;
         try {
             transferManager = TransferManagerBuilder.standard().withS3Client(conn).build();
-            Download download = transferManager.download(taskObject.getBucketName(), taskObject.getObjectName(), dataFile);
+            Download download = transferManager.download(task.getBucketName(), task.getObjectName(), dataFile);
             download.waitForCompletion();
 
             ArchiveOperations operation = new ArchiveOperations();
@@ -129,12 +129,12 @@ public class Ceph {
             if (unzipResult == -1) {
                 LOGGER.error("Error while unzip " + archivePath + " after download.");
                 timerCreatorService.cancelTimer(timer);
-                eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+                eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
                 return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
             }
         } catch (InterruptedException ex) {
             LOGGER.error("Download was interrupted. Data: " + archivePath, ex);
-            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return CompletableFuture.completedFuture("DOWNLOAD_ERROR");
         } finally {
             if (transferManager != null) {
@@ -142,28 +142,28 @@ public class Ceph {
             }
         }
         timerCreatorService.cancelTimer(timer);
-        eventPublisher.publishTaskEvent("DOWNLOAD_DONE", taskObject);
+        eventPublisher.publishTaskEvent("DOWNLOAD_DONE", task);
         return CompletableFuture.completedFuture("DOWNLOAD_DONE");
     }
 
     @Async
     public CompletableFuture<String> upload() {
-        Timer timer = timerCreatorService.createUploadTimer(taskObject.getTaskId());
-        if (!programParamRepository.existsByProgramId(taskObject.getProgramId())) {
-            LOGGER.error("Indication " + taskObject.getProgramId() + " not found");
+        Timer timer = timerCreatorService.createUploadTimer(task.getTaskId());
+        if (!programParamRepository.existsByProgramId(task.getProgramId())) {
+            LOGGER.error("Indication " + task.getProgramId() + " not found");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
 
-        String homeDir = programParamRepository.findByProgramIdAndParamName(taskObject.getProgramId(), "HOME").getParamValue();
-        String taskDir = homeDir + File.separator + taskObject.getTaskId();
-        String archivePath = taskDir + File.separator + taskObject.getTaskId() + ".zip";
+        String homeDir = programParamRepository.findByProgramIdAndParamName(task.getProgramId(), "HOME").getParamValue();
+        String taskDir = homeDir + File.separator + task.getTaskId();
+        String archivePath = taskDir + File.separator + task.getTaskId() + ".zip";
         
         if (debugMode()) {
-            LOGGER.debug("Upload data [DEBUG MODE]: " + archivePath + " to Ceph [bucket: " + taskObject.getBucketName() + 
-                                                                              ", object: " + taskObject.getObjectName() +"]");
-            eventPublisher.publishTaskEvent("UPLOAD_DONE", taskObject);
+            LOGGER.debug("Upload data [DEBUG MODE]: " + archivePath + " to Ceph [bucket: " + task.getBucketName() +
+                                                                              ", object: " + task.getObjectName() +"]");
+            eventPublisher.publishTaskEvent("UPLOAD_DONE", task);
             return CompletableFuture.completedFuture("UPLOAD_DONE");
         }
 
@@ -173,13 +173,13 @@ public class Ceph {
         if (zipResult == -1) {
             LOGGER.error("Error while zip " + archivePath + " before upload.");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
         if (!zipFile.exists()) {
             LOGGER.error("File " + archivePath + " not found");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
 
@@ -198,13 +198,13 @@ public class Ceph {
         if (conn == null) {
             LOGGER.error("Connection to: " + cephHost + " failed");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
-        if (!conn.doesBucketExistV2(taskObject.getBucketName())) {
-            LOGGER.error("Bucket with name '" + taskObject.getBucketName() + "' is not exist");
+        if (!conn.doesBucketExistV2(task.getBucketName())) {
+            LOGGER.error("Bucket with name '" + task.getBucketName() + "' is not exist");
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         }
         TransferManager transferManager = null;
@@ -215,16 +215,16 @@ public class Ceph {
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(uploadFile.getSize());
             transferManager = TransferManagerBuilder.standard().withS3Client(conn).build();
-            Upload upload = transferManager.upload(taskObject.getBucketName(), taskObject.getObjectName(), uploadInputStream, metadata);
+            Upload upload = transferManager.upload(task.getBucketName(), task.getObjectName(), uploadInputStream, metadata);
             upload.waitForCompletion();
         } catch (IOException ex) {
             LOGGER.error("Error while upload. Data: " + archivePath + ". Error message: " + ex.getMessage(), ex);
             timerCreatorService.cancelTimer(timer);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         } catch (InterruptedException ex) {
             LOGGER.error("Upload was interrupted. Data: " + archivePath, ex);
-            eventPublisher.publishTaskEvent("UPLOAD_ERROR", taskObject);
+            eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return CompletableFuture.completedFuture("UPLOAD_ERROR");
         } finally {
             if (transferManager != null) {
@@ -232,7 +232,7 @@ public class Ceph {
             }
         }
         timerCreatorService.cancelTimer(timer);
-        eventPublisher.publishTaskEvent("UPLOAD_DONE", taskObject);
+        eventPublisher.publishTaskEvent("UPLOAD_DONE", task);
         return CompletableFuture.completedFuture("UPLOAD_DONE");
     }
 

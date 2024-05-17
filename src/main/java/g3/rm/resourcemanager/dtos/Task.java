@@ -3,8 +3,7 @@ package g3.rm.resourcemanager.dtos;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TaskObject {
-    private long eventId;
+public class Task {
     private long taskId;
     private long sessionId;
     private int programId;
@@ -13,17 +12,9 @@ public class TaskObject {
     private String objectName;
     private String sessionStatus;
 
-    public TaskObject() {
+    public Task() {
         this.deviceNameList = new ArrayList<>(4);
         this.sessionStatus = "";
-    }
-
-    public long getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(long eventId) {
-        this.eventId = eventId;
     }
 
     public long getTaskId() {
@@ -87,8 +78,7 @@ public class TaskObject {
     @Override
     public String toString() {
         return "TaskObject{" +
-                "eventId=" + eventId +
-                ", taskId=" + taskId +
+                "taskId=" + taskId +
                 ", sessionId=" + sessionId +
                 ", programId=" + programId +
                 ", deviceNameList=" + deviceNameList +
