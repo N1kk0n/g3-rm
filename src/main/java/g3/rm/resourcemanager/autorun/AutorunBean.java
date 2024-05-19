@@ -30,17 +30,33 @@ public class AutorunBean {
     private TimerCreatorService timerCreatorService;
 
     @PostConstruct
-    public void init() {
+    public void init() throws InterruptedException {
         if (!isParamsCorrect()) {
             System.exit(-1);
         }
         System.out.println("Input parameters has checked. Start Agent configuration update procedure...");
-        updateParametersService.updateManagerParams(environment.getProperty(MANAGER_NAME));
-        updateParametersService.updateDeviceParams(environment.getProperty(MANAGER_NAME));
-        updateParametersService.updateProgramParams(environment.getProperty(MANAGER_NAME));
+        updateParams();
 //        processContainerService.clearTaskProcesses();
 //        logCleanerService.cleanOldTaskLogs();
         timerCreatorService.createCheckDecisionTimer();
+    }
+
+    private void updateParams() throws InterruptedException {
+        boolean updated = false;
+        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+            try {
+                if (updated) {
+                    break;
+                }
+                updateParametersService.updateManagerParams(environment.getProperty(MANAGER_NAME));
+                updateParametersService.updateDeviceParams(environment.getProperty(MANAGER_NAME));
+                updateParametersService.updateProgramParams(environment.getProperty(MANAGER_NAME));
+                updated = true;
+            } catch (Exception ex) {
+                System.err.println("Error while trying update input parameters... Sleep for 10 sec.\nError reason: " + ex.getMessage());
+                Thread.sleep(10_000);
+            }
+        }
     }
 
     private boolean isParamsCorrect() {
