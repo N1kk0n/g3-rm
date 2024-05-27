@@ -27,14 +27,14 @@ public class LogCleanerService {
     public void cleanOldTaskLogs() {
         ManagerParam maxAgeParam = managerParamRepository.getByParamName("LOG_MAX_AGE");
         if (maxAgeParam == null) {
-            LOGGER.error("Agent parameter LOG_MAX_AGE not found");
+            LOGGER.error("Manager parameter LOG_MAX_AGE not found");
             return;
         }
         int maxAge = Integer.parseInt(maxAgeParam.getParamValue());
 
         ManagerParam logPathParam = managerParamRepository.getByParamName("TASK_LOG_DIR");
         if (logPathParam == null) {
-            LOGGER.error("Agent parameter TASK_LOG_DIR not found");
+            LOGGER.error("Manager parameter TASK_LOG_DIR not found");
             return;
         }
         String logPath = logPathParam.getParamValue();
@@ -86,7 +86,7 @@ public class LogCleanerService {
     private boolean debugMode() {
         ManagerParam debugModeParam = managerParamRepository.getByParamName("AGENT_DEBUG_MODE");
         if (debugModeParam == null) {
-            LOGGER.error("Agent parameter with name: AGENT_DEBUG_MODE not found");
+            LOGGER.error("Manager parameter with name: AGENT_DEBUG_MODE not found");
             return false;
         }
         String debugMode = debugModeParam.getParamValue();

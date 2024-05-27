@@ -1,9 +1,9 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.entities.ManagerParam;
 import g3.rm.resourcemanager.entities.DeviceParam;
-import g3.rm.resourcemanager.repositories.ManagerParamRepository;
+import g3.rm.resourcemanager.entities.ManagerParam;
 import g3.rm.resourcemanager.repositories.DeviceParamRepository;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
@@ -37,18 +37,18 @@ public class MailSenderService {
         }
         ManagerParam mailHostParam = managerParamRepository.getByParamName("ALARM_MAIL_HOST");
         if (mailHostParam == null) {
-            LOGGER.error("Agent parameter ALARM_MAIL_HOST not found");
+            LOGGER.error("Manager parameter ALARM_MAIL_HOST not found");
             return;
         }
 
         ManagerParam mailHostAddress = managerParamRepository.getByParamName("ALARM_MAIL_ADDRESS");
         if (mailHostAddress == null) {
-            LOGGER.error("Agent parameter ALARM_MAIL_ADDRESS not found");
+            LOGGER.error("Manager parameter ALARM_MAIL_ADDRESS not found");
             return;
         }
         String mailHost = mailHostParam.getParamValue();
         String mailAddress = mailHostAddress.getParamValue();
-        String subject = "Gambit check device: " + deviceName;
+        String subject = "Check device: " + deviceName;
         String text = "======================\n Error on check device: " + deviceName + ". Check device ended with code: " + code + "\n======================";
         sendEmailMessage(mailAddress, mailHost, subject, text);
     }
@@ -88,7 +88,7 @@ public class MailSenderService {
     private boolean debugMode() {
         ManagerParam debugModeParam = managerParamRepository.getByParamName("AGENT_DEBUG_MODE");
         if (debugModeParam == null) {
-            LOGGER.error("Agent parameter with name: AGENT_DEBUG_MODE not found");
+            LOGGER.error("Manager parameter with name: AGENT_DEBUG_MODE not found");
             return false;
         }
         String debugMode = debugModeParam.getParamValue();

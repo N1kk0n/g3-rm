@@ -4,6 +4,7 @@ import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.entities.ManagerParam;
 import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.timers.*;
+import g3.rm.resourcemanager.utils.SingletonTimerWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ public class TimerCreatorService {
 
     private final Logger LOGGER = LogManager.getLogger("TimerService");
 
-    private final int DECISION_UPDATE_TIMEOUT = 30;
+    private final int DECISION_UPDATE_TIMEOUT = 5;
     private final int START_TASK_COUNTDOWN = 10;
 
     public Timer createCheckDeviceTimer(String deviceName) {
@@ -34,7 +35,7 @@ public class TimerCreatorService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("CHECKDEVICE_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: CHECKDEVICE_TIMEOUT not found");
+            LOGGER.error("Manager param with name: CHECKDEVICE_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -53,7 +54,7 @@ public class TimerCreatorService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("DOWNLOAD_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: DOWNLOAD_TIMEOUT not found");
+            LOGGER.error("Manager param with name: DOWNLOAD_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -72,7 +73,7 @@ public class TimerCreatorService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("CHECK_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: CHECK_TIMEOUT not found");
+            LOGGER.error("Manager param with name: CHECK_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -91,7 +92,7 @@ public class TimerCreatorService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("DEPLOY_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: DEPLOY_TIMEOUT not found");
+            LOGGER.error("Manager param with name: DEPLOY_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -110,7 +111,7 @@ public class TimerCreatorService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("STOP_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: STOP_TIMEOUT not found");
+            LOGGER.error("Manager param with name: STOP_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -129,7 +130,7 @@ public class TimerCreatorService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("COLLECT_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: COLLECT_TIMEOUT not found");
+            LOGGER.error("Manager param with name: COLLECT_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -149,7 +150,7 @@ public class TimerCreatorService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("UPLOAD_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: UPLOAD_TIMEOUT not found");
+            LOGGER.error("Manager param with name: UPLOAD_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -168,7 +169,7 @@ public class TimerCreatorService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("PROGRESSINFO_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: PROGRESSINFO_TIMEOUT not found");
+            LOGGER.error("Manager param with name: PROGRESSINFO_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -180,7 +181,7 @@ public class TimerCreatorService {
     public Timer createRestoreTimer() {
         ManagerParam managerParam = managerParamRepository.getByParamName("RESTORE_TIMEOUT");
         if (managerParam == null) {
-            LOGGER.error("Agent param with name: RESTORE_TIMEOUT not found");
+            LOGGER.error("Manager param with name: RESTORE_TIMEOUT not found");
             return null;
         }
         long timerDelay = Long.parseLong(managerParam.getParamValue());
@@ -198,9 +199,14 @@ public class TimerCreatorService {
     }
 
     public void createCheckDecisionTimer() {
+        SingletonTimerWrapper singletonTimerWrapper = applicationContext.getBean(SingletonTimerWrapper.class);
+        if (singletonTimerWrapper.existsTimer("DecisionCreatorTimer")) {
+            return;
+        }
         Timer timer = new Timer("DecisionCreatorTimer", true);
         CheckDecisionTimer checkDecisionTimer = applicationContext.getBean(CheckDecisionTimer.class);
         timer.schedule(checkDecisionTimer, DECISION_UPDATE_TIMEOUT * 1000);
+        singletonTimerWrapper.storeTimer("DecisionCreatorTimer", timer);
     }
 
     public void createStartTaskCountdown(Task task) {
@@ -219,7 +225,7 @@ public class TimerCreatorService {
     private boolean debugMode() {
         ManagerParam debugModeParam = managerParamRepository.getByParamName("AGENT_DEBUG_MODE");
         if (debugModeParam == null) {
-            LOGGER.error("Agent parameter with name: AGENT_DEBUG_MODE not found");
+            LOGGER.error("Manager parameter with name: AGENT_DEBUG_MODE not found");
             return false;
         }
         String debugMode = debugModeParam.getParamValue();

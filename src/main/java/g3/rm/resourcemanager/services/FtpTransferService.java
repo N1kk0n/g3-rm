@@ -24,35 +24,35 @@ public class FtpTransferService {
     public String uploadExecutionLog(long taskId, long sessionId) {
         ManagerParam ftpLogHostParam = managerParamRepository.getByParamName("FTP_LOG_HOST");
         if (ftpLogHostParam == null) {
-            LOGGER.error("Agent parameter FTP_LOG_HOST not found");
+            LOGGER.error("Manager parameter FTP_LOG_HOST not found");
             return "Internal error. Check logs for details";
         }
         String ftpHost = ftpLogHostParam.getParamValue();
 
         ManagerParam ftpUserParam = managerParamRepository.getByParamName("FTP_LOG_USER");
         if (ftpUserParam == null) {
-            LOGGER.error("Agent parameter FTP_LOG_USER not found");
+            LOGGER.error("Manager parameter FTP_LOG_USER not found");
             return "Internal error. Check logs for details";
         }
         String ftpUser = ftpUserParam.getParamValue();
 
         ManagerParam ftpPasswordParam = managerParamRepository.getByParamName("FTP_LOG_PASSWORD");
         if (ftpPasswordParam == null) {
-            LOGGER.error("Agent parameter FTP_LOG_PASSWORD not found");
+            LOGGER.error("Manager parameter FTP_LOG_PASSWORD not found");
             return "Internal error. Check logs for details";
         }
         String ftpPassword = ftpPasswordParam.getParamValue();
 
         ManagerParam ftpDirectoryParam = managerParamRepository.getByParamName("FTP_LOG_DIRECTORY");
         if (ftpDirectoryParam == null) {
-            LOGGER.error("Agent parameter FTP_LOG_DIRECTORY not found");
+            LOGGER.error("Manager parameter FTP_LOG_DIRECTORY not found");
             return "Internal error. Check logs for details";
         }
         String ftpDirectory = ftpDirectoryParam.getParamValue();
 
         ManagerParam taskLogDirParam = managerParamRepository.getByParamName("TASK_LOG_DIR");
         if (taskLogDirParam == null) {
-            LOGGER.error("Agent parameter TASK_LOG_DIR not found");
+            LOGGER.error("Manager parameter TASK_LOG_DIR not found");
             return "Internal error. Check logs for details";
         }
         String logPath = taskLogDirParam.getParamValue();

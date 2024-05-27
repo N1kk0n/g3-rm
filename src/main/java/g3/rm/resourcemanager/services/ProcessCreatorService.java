@@ -1,12 +1,12 @@
 package g3.rm.resourcemanager.services;
 
+import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.entities.DeviceParam;
 import g3.rm.resourcemanager.processes.*;
 import g3.rm.resourcemanager.repositories.DeviceParamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
-import g3.rm.resourcemanager.dtos.Task;
 
 @Service
 public class ProcessCreatorService {

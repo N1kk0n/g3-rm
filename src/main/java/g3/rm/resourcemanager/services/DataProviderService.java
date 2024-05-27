@@ -1,8 +1,8 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.datasources.Ceph;
 import g3.rm.resourcemanager.datasources.OracleDB;
+import g3.rm.resourcemanager.dtos.Task;
 import g3.rm.resourcemanager.entities.ManagerParam;
 import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.router.RouterEventPublisher;
@@ -35,7 +35,7 @@ public class DataProviderService {
     public void download(Task task) {
         ManagerParam dataSourceParam = managerParamRepository.getByParamName("DATA_SOURCE");
         if (dataSourceParam == null) {
-            LOGGER.error("Agent parameter DATA_SOURCE not found");
+            LOGGER.error("Manager parameter DATA_SOURCE not found");
             eventPublisher.publishTaskEvent("DOWNLOAD_ERROR", task);
             return;
         }
@@ -63,7 +63,7 @@ public class DataProviderService {
     public void upload(Task task) {
         ManagerParam dataSourceParam = managerParamRepository.getByParamName("DATA_SOURCE");
         if (dataSourceParam == null) {
-            LOGGER.error("Agent parameter DATA_SOURCE not found");
+            LOGGER.error("Manager parameter DATA_SOURCE not found");
             eventPublisher.publishTaskEvent("UPLOAD_ERROR", task);
             return;
         }

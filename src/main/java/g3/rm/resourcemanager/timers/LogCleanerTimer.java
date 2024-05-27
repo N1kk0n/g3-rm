@@ -24,7 +24,7 @@ public class LogCleanerTimer extends TimerTask {
     public void run() {
         ManagerParam maxAgeParam = managerParamRepository.getByParamName("LOG_MAX_AGE");
         if (maxAgeParam == null) {
-            LOGGER.error("Agent parameter LOG_MAX_AGE not found");
+            LOGGER.error("Manager parameter LOG_MAX_AGE not found");
             return;
         }
         int maxAge = Integer.parseInt(maxAgeParam.getParamValue());

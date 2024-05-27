@@ -28,7 +28,7 @@ public class LoggerService {
     public String getPage(long taskId, long sessionId, int pageNumber, int pageSize) {
         ManagerParam managerParam = managerParamRepository.getByParamName("TASK_LOG_DIR");
         if (managerParam == null) {
-            LOGGER.error("Agent parameter TASK_LOG_DIR not found");
+            LOGGER.error("Manager parameter TASK_LOG_DIR not found");
             return "Internal error. Check logs for details";
         }
         String logPath = managerParam.getParamValue();
@@ -84,7 +84,7 @@ public class LoggerService {
 
         ManagerParam managerParam = managerParamRepository.getByParamName("TASK_LOG_DIR");
         if (managerParam == null) {
-            LOGGER.error("Agent parameter TASK_LOG_DIR not found");
+            LOGGER.error("Manager parameter TASK_LOG_DIR not found");
             return;
         }
         String logPath = managerParam.getParamValue();
@@ -331,7 +331,7 @@ public class LoggerService {
     private boolean debugMode() {
         ManagerParam debugModeParam = managerParamRepository.getByParamName("AGENT_DEBUG_MODE");
         if (debugModeParam == null) {
-            LOGGER.error("Agent parameter with name: AGENT_DEBUG_MODE not found");
+            LOGGER.error("Manager parameter with name: AGENT_DEBUG_MODE not found");
             return false;
         }
         String debugMode = debugModeParam.getParamValue();

@@ -1,9 +1,6 @@
 package g3.rm.resourcemanager.autorun;
 
-import g3.rm.resourcemanager.services.LogCleanerService;
-import g3.rm.resourcemanager.services.ProcessContainerService;
-import g3.rm.resourcemanager.services.TimerCreatorService;
-import g3.rm.resourcemanager.services.UpdateParametersService;
+import g3.rm.resourcemanager.services.*;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -27,6 +24,8 @@ public class AutorunBean {
     @Autowired
     private UpdateParametersService updateParametersService;
     @Autowired
+    private UpdateSelfInfoService updateSelfInfoService;
+    @Autowired
     private TimerCreatorService timerCreatorService;
 
     @PostConstruct
@@ -34,10 +33,12 @@ public class AutorunBean {
         if (!isParamsCorrect()) {
             System.exit(-1);
         }
-        System.out.println("Input parameters has checked. Start Agent configuration update procedure...");
+        System.out.println("Input parameters has checked. Start Manager configuration update procedure...");
         updateParametersService.updateManagerParams(environment.getProperty(MANAGER_NAME));
         updateParametersService.updateDeviceParams(environment.getProperty(MANAGER_NAME));
         updateParametersService.updateProgramParams(environment.getProperty(MANAGER_NAME));
+
+        updateSelfInfoService.setManagerOnlineStatus(environment.getProperty(MANAGER_NAME));
 //        processContainerService.clearTaskProcesses();
 //        logCleanerService.cleanOldTaskLogs();
         timerCreatorService.createCheckDecisionTimer();

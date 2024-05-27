@@ -1,10 +1,10 @@
 package g3.rm.resourcemanager.services;
 
-import g3.rm.resourcemanager.entities.ManagerParam;
 import g3.rm.resourcemanager.entities.DeviceParam;
+import g3.rm.resourcemanager.entities.ManagerParam;
 import g3.rm.resourcemanager.entities.ProgramParam;
-import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.repositories.DeviceParamRepository;
+import g3.rm.resourcemanager.repositories.ManagerParamRepository;
 import g3.rm.resourcemanager.repositories.ProgramParamRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -258,7 +258,7 @@ public class FileSystemService {
     private boolean debugMode() {
         ManagerParam debugModeParam = managerParamRepository.getByParamName("AGENT_DEBUG_MODE");
         if (debugModeParam == null) {
-            LOGGER.error("Agent parameter with name: AGENT_DEBUG_MODE not found");
+            LOGGER.error("Manager parameter with name: AGENT_DEBUG_MODE not found");
             return false;
         }
         String debugMode = debugModeParam.getParamValue();

@@ -1,12 +1,17 @@
 package g3.rm.resourcemanager.config;
 
 import g3.rm.resourcemanager.timers.*;
+import g3.rm.resourcemanager.utils.SingletonTimerWrapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
 @Configuration
 public class TimersConfig {
+    @Bean
+    @Scope("singleton")
+    SingletonTimerWrapper timerSingletonWrapper() { return new SingletonTimerWrapper(); }
+
     @Bean
     @Scope("prototype")
     CheckDecisionTimer checkDecisionTimer() {
