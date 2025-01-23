@@ -1,0 +1,19 @@
+server:
+  port: 8083
+
+spring:
+  datasource:
+    state:
+      driver-class-name: org.postgresql.Driver
+      url: jdbc:postgresql://localhost:5432/g3
+      username: rm
+      password: g3_rm
+    inner:
+      driverClassName: org.h2.Driver
+      url: jdbc:h2:mem:g3rm-db
+      username: rm
+      password: g3_rm
+  h2:
+    console:
+      enabled: true
+
