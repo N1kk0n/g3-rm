@@ -2,6 +2,17 @@ server:
   port: 8083
 
 spring:
+  kafka:
+    producer:
+      bootstrap-servers: localhost:29092,localhost:39092,localhost:49092
+      key-serializer: org.apache.kafka.common.serialization.LongSerializer
+      value-serializer: org.apache.kafka.common.serialization.UUIDSerializer
+    consumer:
+      bootstrap-servers: localhost:29092,localhost:39092,localhost:49092
+      key-deserializer: org.apache.kafka.common.serialization.LongDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.UUIDDeserializer
+    listener:
+      ack-mode: manual_immediate
   datasource:
     state:
       driver-class-name: org.postgresql.Driver

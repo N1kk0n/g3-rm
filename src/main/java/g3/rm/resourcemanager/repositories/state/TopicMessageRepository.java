@@ -41,11 +41,17 @@ public class TopicMessageRepository {
                 }, message_uuid);
     }
 
-    public int commitReceiveMessage(UUID message_uuid) {
-        return jdbcTemplate.update("""
-                UPDATE state_schema.topic_message set is_received = true
-                WHERE unique_id = ?
-                """
-                , message_uuid);
+    public void commitReceiveMessage(UUID message_uuid) {
+        jdbcTemplate.update("""
+            UPDATE state_schema.topic_message set is_received = true
+            WHERE unique_id = ?
+            """, message_uuid);
+    }
+
+    public void deleteRoute(Long routeId) {
+        jdbcTemplate.update("""
+            DELETE FROM state_schema.topic_message
+            WHERE route_id = ?
+            """, routeId);
     }
 }
