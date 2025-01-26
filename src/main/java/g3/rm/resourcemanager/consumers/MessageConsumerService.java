@@ -1,9 +1,9 @@
 package g3.rm.resourcemanager.consumers;
 
 import g3.rm.resourcemanager.message.KafkaMessage;
-import g3.rm.resourcemanager.message.MessageContent;
-import g3.rm.resourcemanager.repositories.state.RouteStatusRepository;
+import g3.rm.resourcemanager.repositories.state.StateRouteRepository;
 import g3.rm.resourcemanager.repositories.state.TopicMessageRepository;
+import g3.rm.resourcemanager.services.RouterService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -16,13 +16,17 @@ import java.util.UUID;
 public class MessageConsumerService {
 
     private final TopicMessageRepository topicMessageRepository;
-    private final RouteStatusRepository routeStatusRepository;
+    private final StateRouteRepository stateRouteRepository;
+    private final RouterService routerService;
     private final String TOPIC_NAME = "rm-topic";
     private final Logger LOGGER = LogManager.getLogger(MessageConsumerService.class);
 
-    public MessageConsumerService(TopicMessageRepository topicMessageRepository, RouteStatusRepository routeStatusRepository) {
+    public MessageConsumerService(TopicMessageRepository topicMessageRepository,
+                                  StateRouteRepository stateRouteRepository,
+                                  RouterService routerService) {
         this.topicMessageRepository = topicMessageRepository;
-        this.routeStatusRepository = routeStatusRepository;
+        this.stateRouteRepository = stateRouteRepository;
+        this.routerService = routerService;
     }
 
     @KafkaListener(topics = TOPIC_NAME, groupId = "rm")
@@ -33,24 +37,18 @@ public class MessageConsumerService {
             acknowledgment.acknowledge();
             return;
         }
-        if (routeStatusRepository.isRouteNotActive(message.getRoute_id())) {
+        if (stateRouteRepository.isRouteNotActive(message.getRoute_id())) {
             LOGGER.info("Route for this message is not active. Message: " + message);
             acknowledgment.acknowledge();
             return;
         }
-
         LOGGER.info("Message received: " +  message);
-        MessageContent content = KafkaMessage.getContentObject(message);
-        LOGGER.info("Message content: " + content);
 
         try {
-            // Test exception
-            if (message.getRoute_id() == 5) {
-                throw new RuntimeException("Test exception while processing route: " + message.getRoute_id());
-            }
+            routerService.onRoute(message);
         } catch (RuntimeException ex) {
             LOGGER.error("Runtime exception while processing message: " + message, ex);
-            routeStatusRepository.setRouteStatus(message.getRoute_id(), -1);
+            stateRouteRepository.setRouteStatus(message.getRoute_id(), -1);
             return;
         }
 

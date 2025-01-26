@@ -44,7 +44,7 @@ public class AutorunRepository {
         innerTemplate.execute("create table if not exists COMPONENT(ID int primary key, COMPONENT_NAME varchar(64), TOPIC_NAME varchar(64))");
         innerTemplate.execute("create table if not exists OPERATION(ID int primary key, OPERATION_NAME varchar(64), COMPONENT_ID int)");
         innerTemplate.execute("create table if not exists GRAPH(ID int primary key, GRAPH_NAME varchar(64) not null)");
-        innerTemplate.execute("create table if not exists VERTEX(ID int primary key, GRAPH_ID int not null references GRAPH(ID), OPERATION_ID int not null)");
+        innerTemplate.execute("create table if not exists VERTEX(ID int primary key, GRAPH_ID int not null references GRAPH(ID), VERTEX_NUM int not null, OPERATION_ID int not null)");
         innerTemplate.execute("create table if not exists EDGE(GRAPH_ID int not null references GRAPH(id), CURR_VERTEX_ID int not null, RESULT int not null, NEXT_GRAPH_ID int not null, NEXT_VERTEX_ID int not null)");
     }
 
@@ -114,12 +114,12 @@ public class AutorunRepository {
     }
 
     private void setVertexData() {
-        record VertexData(int id, int graph_id, int operation_id) {}
+        record VertexData(int id, int graph_id, int vertex_num, int operation_id) {}
 
         List<VertexData> vertexDataList = stateTemplate.query("select * from state_schema.vertex",
-                (rs, rowNum) -> new VertexData(rs.getInt("ID"), rs.getInt("GRAPH_ID") ,rs.getInt("OPERATION_ID")));
+                (rs, rowNum) -> new VertexData(rs.getInt("ID"), rs.getInt("GRAPH_ID"), rs.getInt("VERTEX_NUM") ,rs.getInt("OPERATION_ID")));
         String vertexInsertSql = """
-            insert into vertex(id, graph_id, operation_id) values (?, ?, ?)
+            insert into vertex(id, graph_id, vertex_num, operation_id) values (?, ?, ?, ?)
         """;
         innerTemplate.batchUpdate(vertexInsertSql,
                 vertexDataList,
@@ -127,7 +127,8 @@ public class AutorunRepository {
                 (PreparedStatement ps, VertexData vd) -> {
                     ps.setInt(1, vd.id());
                     ps.setInt(2, vd.graph_id());
-                    ps.setInt(3, vd.operation_id());
+                    ps.setInt(3, vd.vertex_num());
+                    ps.setInt(4, vd.operation_id());
                 });
     }
 

@@ -7,7 +7,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class NextRouteVertex {
-    String consumer;
+public class RouteVertex {
+    int graph_id;
     String operation;
+    String consumer;
+    String topic;
 }

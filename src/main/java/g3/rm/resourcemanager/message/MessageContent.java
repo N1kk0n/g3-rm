@@ -2,27 +2,33 @@ package g3.rm.resourcemanager.message;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.util.LinkedList;
+
+import java.util.ArrayList;
 import java.util.List;
 
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
 @ToString
 public class MessageContent {
     private Long route_id;
-    private Long graph_id;
+    private Integer graph_id;
     private String operation;
     private Long task_id;
     private Long session_id;
-    private List<String> device_name_list = new LinkedList<>();
-    private List<Operation> log = new LinkedList<>();
+    private List<String> device_name_list;
+    private List<Operation> log;
+
+    public MessageContent(Long route_id, Integer graph_id, String operation) {
+        this.route_id = route_id;
+        this.graph_id = graph_id;
+        this.operation = operation;
+        this.device_name_list = new ArrayList<>();
+        this.log = new ArrayList<>();
+    }
 
     public static String json(MessageContent content) {
         Logger logger = LogManager.getLogger(MessageContent.class);

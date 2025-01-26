@@ -30,7 +30,7 @@ public class KafkaMessage {
             return objectMapper.readValue(message.getContent(), MessageContent.class);
         } catch (JsonProcessingException e) {
             logger.error("Error while create object from JSON: " + message, e);
-            return new MessageContent();
+            return new MessageContent(null, null, null);
         }
     }
 }
