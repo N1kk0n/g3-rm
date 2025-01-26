@@ -48,7 +48,7 @@ public class TopicMessageRepository {
             """, message_uuid);
     }
 
-    public void deleteRoute(Long routeId) {
+    public void deleteRouteMessages(Long routeId) {
         jdbcTemplate.update("""
             DELETE FROM state_schema.topic_message
             WHERE route_id = ?

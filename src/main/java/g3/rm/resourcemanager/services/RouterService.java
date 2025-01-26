@@ -54,7 +54,7 @@ public class RouterService {
         MessageContent content = new MessageContent(routeId, graphId, nextOperation);
 
         List<Operation> logList = content.getLog();
-        logList.add(new Operation(routeId, currOperation, currOperationResult));
+        logList.add(new Operation(routeId, currOperation, SELF_NAME, currOperationResult));
         content.setLog(logList);
 
         KafkaMessage kafkaMessage = new KafkaMessage();
@@ -69,7 +69,7 @@ public class RouterService {
 
     public void onRoute(KafkaMessage message) {
         MessageContent content = KafkaMessage.getContentObject(message);
-        long routeId = message.getRoute_id();
+        long routeId = content.getRoute_id();
         int graphId = content.getGraph_id();
         String operation = content.getOperation();
 
@@ -78,14 +78,15 @@ public class RouterService {
                 int code = 2;
                 RouteVertex nextRouteVertex = innerRouteRepository.route(content.getGraph_id(), operation, code);
                 if (!Objects.equals(nextRouteVertex.getGraph_id(), graphId)) {
-                    topicMessageRepository.deleteRoute(routeId);
+                    topicMessageRepository.deleteRouteMessages(routeId);
                     createRoute(nextRouteVertex.getGraph_id());
                 } else {
                     continueRoute(routeId, graphId, "TEST", code, nextRouteVertex.getOperation(), nextRouteVertex.getConsumer(), nextRouteVertex.getTopic());
                 }
             }
             case "END" -> {
-                topicMessageRepository.deleteRoute(routeId);
+                topicMessageRepository.deleteRouteMessages(routeId);
+                stateRouteRepository.deleteRoute(routeId);
             }
         }
     }

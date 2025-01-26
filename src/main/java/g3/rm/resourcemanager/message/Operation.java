@@ -12,5 +12,6 @@ import lombok.Setter;
 public class Operation {
     private Long route_id;
     private String name;
+    private String component;
     private Integer result;
 }

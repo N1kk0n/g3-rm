@@ -1,6 +1,7 @@
 package g3.rm.resourcemanager.repositories.state;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -57,5 +58,13 @@ public class StateRouteRepository {
 
         Number id = simpleJdbcInsert.executeAndReturnKey(parameters);
         return id.longValue();
+    }
+
+    public void deleteRoute(Long routeId) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        jdbcTemplate.update("""
+            DELETE FROM state_schema.route
+            WHERE id = ?
+            """, routeId);
     }
 }
