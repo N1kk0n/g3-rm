@@ -1,7 +1,6 @@
 package g3.rm.resourcemanager.configs;
 
 import g3.rm.resourcemanager.repositories.AutorunRepository;
-import g3.rm.resourcemanager.repositories.state.ComponentRepository;
 import g3.rm.resourcemanager.services.UpdateParametersService;
 import jakarta.annotation.PostConstruct;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -10,19 +9,13 @@ import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.TopicConfig;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
-import java.net.Inet4Address;
-import java.net.UnknownHostException;
-import java.sql.PreparedStatement;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 
@@ -32,6 +25,7 @@ public class Autorun {
     private final KafkaAdmin kafkaAdmin;
     private final AutorunRepository autorunRepository;
     private final UpdateParametersService updateParametersService;
+    private final Logger LOGGER = LogManager.getLogger(Autorun.class);
 
     private final String[] TOPICS = {"qm-topic", "rm-topic"};
 
@@ -52,16 +46,16 @@ public class Autorun {
 
     private void createKafkaTopics() {
         for (String topicName : TOPICS) {
-            System.out.println("Trying to create topic: " + topicName);
+            LOGGER.info("Trying to create topic: " + topicName);
 
             try (AdminClient admin = AdminClient.create(kafkaAdmin.getConfigurationProperties())){
                 ListTopicsResult listTopicsResult = admin.listTopics();
                 if (listTopicsResult.names().get().contains(topicName)) {
-                    System.out.println("Topic with name " + topicName + " already exists");
+                    LOGGER.info("Topic with name " + topicName + " already exists");
                     continue;
                 }
 
-                System.out.println("Creating new topic: " + topicName);
+                LOGGER.info("Creating new topic: " + topicName);
 
                 NewTopic newTopic = TopicBuilder.name(topicName)
                         .partitions(10)
@@ -73,7 +67,7 @@ public class Autorun {
                 KafkaFuture<Void> future = createTopicsResult.values().get(topicName);
                 future.get();
 
-                System.out.println(newTopic.name() + " created");
+                LOGGER.info(newTopic.name() + " created");
 
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
