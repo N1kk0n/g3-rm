@@ -1,5 +1,6 @@
 package g3.rm.resourcemanager.controllers;
 
+import g3.rm.resourcemanager.dtos.kafka.Content;
 import g3.rm.resourcemanager.services.RouterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,7 @@ public class MainController {
 
     @GetMapping("/test")
     public ResponseEntity<String> test() {
-        routerService.createRoute(1);
+        routerService.createRoute("G3-TEST", new Content());
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

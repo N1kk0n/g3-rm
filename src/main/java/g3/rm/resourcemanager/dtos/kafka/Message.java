@@ -1,4 +1,4 @@
-package g3.rm.resourcemanager.message;
+package g3.rm.resourcemanager.dtos.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @ToString
-public class KafkaMessage {
+public class Message {
     private UUID unique_id = UUID.randomUUID();
     private Long route_id;
     private String producer;
@@ -23,14 +23,14 @@ public class KafkaMessage {
     private Boolean is_received;
     private String content;
 
-    public static MessageContent getContentObject(KafkaMessage message) {
-        Logger logger = LogManager.getLogger(KafkaMessage.class);
+    public static Content getContentObject(Message message) {
+        Logger logger = LogManager.getLogger(Message.class);
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            return objectMapper.readValue(message.getContent(), MessageContent.class);
+            return objectMapper.readValue(message.getContent(), Content.class);
         } catch (JsonProcessingException e) {
             logger.error("Error while create object from JSON: " + message, e);
-            return new MessageContent(null, null, null);
+            return new Content(null, null, null);
         }
     }
 }

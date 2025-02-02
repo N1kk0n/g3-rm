@@ -1,6 +1,6 @@
 package g3.rm.resourcemanager.repositories.state;
 
-import g3.rm.resourcemanager.message.KafkaMessage;
+import g3.rm.resourcemanager.dtos.kafka.Message;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -16,7 +16,7 @@ public class TopicMessageRepository {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public int saveMessage(KafkaMessage message) {
+    public int saveMessage(Message message) {
         return jdbcTemplate.update("""
                 INSERT INTO state_schema.topic_message (unique_id, route_id, producer_component, consumer_component, is_received, content)
                 VALUES (?, ?, ?, ?, ?, ?::JSON)
@@ -24,13 +24,13 @@ public class TopicMessageRepository {
                 , message.getUnique_id(), message.getRoute_id(), message.getProducer(), message.getConsumer(), false, message.getContent());
     }
 
-    public KafkaMessage getMessage(UUID message_uuid) {
+    public Message getMessage(UUID message_uuid) {
         return jdbcTemplate.queryForObject("""
                 SELECT * FROM state_schema.topic_message
                 WHERE unique_id = ?
                 """
                 , (rs, rowNum) -> {
-                    KafkaMessage message = new KafkaMessage();
+                    Message message = new Message();
                     message.setUnique_id(UUID.fromString(rs.getString("unique_id")));
                     message.setRoute_id(rs.getLong("route_id"));
                     message.setProducer(rs.getString("producer_component"));

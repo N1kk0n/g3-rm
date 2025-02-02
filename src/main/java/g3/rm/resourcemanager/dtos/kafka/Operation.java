@@ -1,4 +1,4 @@
-package g3.rm.resourcemanager.message;
+package g3.rm.resourcemanager.dtos.kafka;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package g3.rm.resourcemanager.message;
+package g3.rm.resourcemanager.dtos.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,16 +13,17 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-public class MessageContent {
+public class Content {
     private Long route_id;
     private Integer graph_id;
     private String operation;
     private Long task_id;
     private Long session_id;
+    private Integer program_id;
     private List<String> device_name_list;
     private List<Operation> log;
 
-    public MessageContent(Long route_id, Integer graph_id, String operation) {
+    public Content(Long route_id, Integer graph_id, String operation) {
         this.route_id = route_id;
         this.graph_id = graph_id;
         this.operation = operation;
@@ -30,8 +31,8 @@ public class MessageContent {
         this.log = new ArrayList<>();
     }
 
-    public static String json(MessageContent content) {
-        Logger logger = LogManager.getLogger(MessageContent.class);
+    public static String json(Content content) {
+        Logger logger = LogManager.getLogger(Content.class);
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             return objectMapper.writeValueAsString(content);

@@ -1,6 +1,6 @@
-package g3.rm.resourcemanager.producers;
+package g3.rm.resourcemanager.services.kafka;
 
-import g3.rm.resourcemanager.message.KafkaMessage;
+import g3.rm.resourcemanager.dtos.kafka.Message;
 import g3.rm.resourcemanager.repositories.state.TopicMessageRepository;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.logging.log4j.LogManager;
@@ -23,7 +23,7 @@ public class MessageProducerService {
         this.kafkaProducerTemplate = kafkaProducerTemplate;
     }
 
-    public void sendMessage(String topicName, KafkaMessage message) {
+    public void sendMessage(String topicName, Message message) {
         long key = message.getRoute_id();
         try {
             int updateCount = topicMessageRepository

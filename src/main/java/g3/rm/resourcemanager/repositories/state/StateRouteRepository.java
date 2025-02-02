@@ -46,6 +46,18 @@ public class StateRouteRepository {
         template.update(sql, sqlParameterSource);
     }
 
+    public Integer getGraphId(String graphName) {
+        String sql = """
+            select id
+            from state_schema.graph
+            where graph_name = :graphName
+        """;
+        NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(dataSource);
+        MapSqlParameterSource sqlParameterSource = new MapSqlParameterSource()
+                .addValue("graphName", graphName);
+        return template.queryForObject(sql, sqlParameterSource, Integer.class);
+    }
+
     public long createRoute(int graphId) {
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(dataSource)
                 .withSchemaName("state_schema")

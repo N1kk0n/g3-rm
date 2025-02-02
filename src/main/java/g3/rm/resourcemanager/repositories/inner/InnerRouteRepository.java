@@ -16,6 +16,17 @@ public class InnerRouteRepository {
         this.template = template;
     }
 
+    public Integer getGraphId(String graphName) {
+        String sql = """
+            select id
+            from graph
+            where graph_name = :graphName
+        """;
+        MapSqlParameterSource sqlParameterSource = new MapSqlParameterSource()
+                .addValue("graphName", graphName);
+        return template.queryForObject(sql, sqlParameterSource, Integer.class);
+    }
+
     public RouteVertex getFirstVertex(int graphId) {
         String sql = """
             select operation_name,
